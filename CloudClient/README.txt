@@ -1,4 +1,4 @@
-# Instructions:
+Instructions:
   Steps:
     1. Must have CloudServer running on a machine (Host) with either a static IP address, or something that can pass as a static IP
        address.
