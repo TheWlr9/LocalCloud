@@ -6,3 +6,5 @@ VERSION or DATE: 1.0.5/April 28 2018
 HOW TO START THIS PROJECT: java ./CloudServer
 AUTHORS: William Ritchie
 USER INSTRUCTIONS:
+  Must provide a port number as a command line argument. The CloudClient code is set to port# 42843. If you want to use a different port, 
+  then you must change the port# in the CloudClient.java code to match the preferred port#.
