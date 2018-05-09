@@ -3,7 +3,9 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.1.8
+ * @version 1.1.9
+ * _1.1.9_
+ *       ~Changed font to a nicer one
  */
 import java.io.*;
 import java.net.*;
@@ -47,7 +49,7 @@ public class CloudClient{
   
   private static FileDialog fileChooser;
   
-  final private static Font FILES_FONT= new Font(Font.MONOSPACED,Font.PLAIN,width/64);
+  final private static Font FILES_FONT= new Font("Arial Black",Font.PLAIN,width/64);
   final private static int LEFT_FILES= width/10;
   final private static int TEXT_HEIGHT= height/38;
   final private static int FILES_BOX_X= width/3;
@@ -55,13 +57,13 @@ public class CloudClient{
   final private static int FILES_BOX_WIDTH= width/2;
   final private static double FILES_BOX_SPACING_MULTIPLIER= 1.5;
   
-  final private static Font MSG_FONT= new Font(Font.MONOSPACED, Font.BOLD, width/20);
+  final private static Font MSG_FONT= new Font("Arial Black", Font.BOLD, width/20);
   final private static int MSG_X= FILES_BOX_X;
   final private static int MSG_Y= height/6;
   final private static int MSG_WIDTH= FILES_BOX_WIDTH;
   final private static int MSG_HEIGHT= height/10;
   
-  final private static Font BUTTON_FONT= new Font(Font.MONOSPACED,Font.ITALIC,width/20);
+  final private static Font BUTTON_FONT= new Font("Arial Black",Font.ITALIC,width/20);
   final private static int BUTTON_X= 3*width/4;
   final private static int BUTTON_Y= 9*height/10;
   final private static int BUTTON_WIDTH= width/5;
