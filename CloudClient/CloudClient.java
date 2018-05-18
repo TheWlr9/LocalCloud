@@ -14,6 +14,7 @@ import java.awt.Color;
 import java.awt.FileDialog;
 import java.awt.Toolkit;
 import java.awt.Dimension;
+import javax.swing.JOptionPane;
 
 import graphics.WindowedGraphics;
 
@@ -76,8 +77,13 @@ public class CloudClient{
   final private static int LOADING_LEFT= LOADING_X-LOADING_WIDTH/2;
   final private static int LOADING_RIGHT= LOADING_X+LOADING_WIDTH/2;
   final private static int LOADING_HEIGHT= MSG_HEIGHT/2;
+	
+  //FLAGS
+  private static boolean setupError;
   
   public static void main(String[] args){
+    setupError= false;
+	  
     myWindow= new WindowedGraphics(width,height);
     fileChooser= new FileDialog(myWindow.getFrame());
     fileChooser.setMultipleMode(false); //To be changed at a later date?
@@ -98,6 +104,10 @@ public class CloudClient{
     catch(IOException e){
       System.err.println("ERROR: CloudClient.main: Error in setting up streams");
       e.printStackTrace();
+	    
+      JOptionPane.showMessageDialog(myWindow.getFrame(), "Unable to access Raspberry Pi", "Error", JOptionPane.ERROR_MESSAGE);
+	    
+      setupError= true;
     }
     
     try{
@@ -203,21 +213,38 @@ public class CloudClient{
       stringOutStream.println("logoff");
       stringOutStream.flush();
     }
-    catch(IOException e){
-      System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
-      e.printStackTrace();
-    }
-    catch(NullPointerException e){
-      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
-      e.printStackTrace();
-    }
-    catch(InterruptedException e){
-      System.err.println("ERROR: ClientSocket: main: Interrupt encountered, cannot sleep");
-    }
-    catch(SecurityException e){
-      System.err.println("ERROR: ClientSocket: main: Client attempting to access unauthorized files");
+    catch(Exception e){
+      if(!setupError){
+        if(e instanceof IOException){
+          System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
+          e.printStackTrace();
+	        
+          JOptionPane.showMessageDialog(myWindow.getFrame(), "Program error. Please contact MNGMNT", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        else if(e instanceof NullPointerException){
+	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
+          e.printStackTrace();
+  	
+          JOptionPane.showMessageDialog(myWindow.getFrame(), "File does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        else if(e instanceof InterruptedException){
+  	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
+          e.printStackTrace();
+  	
+          JOptionPane.showMessageDialog(myWindow.getFrame(), "Rushed service; failsafe triggered", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        else if(e instanceof SecurityException){
+	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
+          e.printStackTrace();
+  	
+          JOptionPane.showMessageDialog(myWindow.getFrame(), "You are unauthorized to access those files", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+      }
     }
     finally{
+      if(myWindow.exists())
+	myWindow.close()
+	    
       System.out.println("\nClosing connection...");
       try{
         if(inStream!=null)
