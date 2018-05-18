@@ -3,7 +3,11 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.1.9
+ * @version 1.2
+ *
+ * _1.2_
+ *       ~Added pop-ups for user clarification
+ *
  * _1.1.9_
  *       ~Changed font to a nicer one
  */
@@ -19,6 +23,8 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
+	final static private String VERSION= "1.2";
+  
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
   final static private String FILE_PATH= "docs"+File.separator;
@@ -88,7 +94,7 @@ public class CloudClient{
     fileChooser= new FileDialog(myWindow.getFrame());
     fileChooser.setMultipleMode(false); //To be changed at a later date?
     
-    myWindow.setTitle(TITLE);
+    myWindow.setTitle(TITLE+" "+VERSION);
     
     try{
       serverSocket= new Socket(ADDRESS, PORT);
