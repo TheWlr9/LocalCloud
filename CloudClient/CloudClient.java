@@ -3,18 +3,21 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.2
- *
+ * @version 1.5
+ * 
+ * _1.5_
+ * 		~Added multiple pages so you can now store INFINITE files, and find them all!
+ * 
  * _1.2_
- *       ~Added pop-ups for user clarification
- *
+ *      ~Added error pop-ups for user clarification
+ * 
  * _1.1.9_
- *       ~Changed font to a nicer one
+ * 		~Changed text font to be more legible
  */
 import java.io.*;
 import java.net.*;
 import java.awt.Font;
-import java.awt.Color;
+import java.awt.Color;	
 import java.awt.FileDialog;
 import java.awt.Toolkit;
 import java.awt.Dimension;
@@ -23,14 +26,18 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.2";
-  
+	final static private String VERSION= "1.5";
+	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
   final static private String FILE_PATH= "docs"+File.separator;
   final static private int SLEEP= 250;
   
+  final static private int MAX_FILES_PER_PAGE= 10;
+  
   private static int bufferSize;
+  private static int pageNo;
+  private static int numOfPages;
   private static Socket serverSocket= null;
   private static InputStream inStream= null;
   private static OutputStream outStream= null;
@@ -83,12 +90,18 @@ public class CloudClient{
   final private static int LOADING_LEFT= LOADING_X-LOADING_WIDTH/2;
   final private static int LOADING_RIGHT= LOADING_X+LOADING_WIDTH/2;
   final private static int LOADING_HEIGHT= MSG_HEIGHT/2;
-	
+  
+  final private static int PAGE_L_X= width/2-40;
+  final private static int PAGE_R_X= width/2+40;
+  final private static int PAGE_Y= height-50;
+  final private static int PAGE_BUTTON_WIDTH= 60;
+  final private static int PAGE_BUTTON_HEIGHT= 30;
+  
   //FLAGS
   private static boolean setupError;
   
   public static void main(String[] args){
-    setupError= false;
+	  setupError= false;
 	  
     myWindow= new WindowedGraphics(width,height);
     fileChooser= new FileDialog(myWindow.getFrame());
@@ -110,13 +123,15 @@ public class CloudClient{
     catch(IOException e){
       System.err.println("ERROR: CloudClient.main: Error in setting up streams");
       e.printStackTrace();
-	    
+      
       JOptionPane.showMessageDialog(myWindow.getFrame(), "Unable to access Raspberry Pi", "Error", JOptionPane.ERROR_MESSAGE);
-	    
+      
       setupError= true;
     }
     
     try{
+    	pageNo= 1;
+    	
       //HERE WAS THE NETWORKING STUFF
       stringOutStream.println(serverSocket.getLocalAddress()); //Must send over the IP address first
       stringOutStream.flush();
@@ -137,7 +152,7 @@ public class CloudClient{
       
       updateCloudFilesNames();
       
-      display();
+      display(pageNo); //Starting page #
       
       //Start the main activity "listener"
       while(myWindow.exists()){
@@ -146,15 +161,16 @@ public class CloudClient{
           double mouseX= myWindow.mouseX();
           double mouseY= myWindow.mouseY();
           boolean download= false;
+          boolean upload= false;
           if(mouseX>(FILES_BOX_X-FILES_BOX_WIDTH/2) && mouseX<(FILES_BOX_X+FILES_BOX_WIDTH/2)){
             for(int i= 0; i<cloudFilesNames.length; i++){
               if(mouseY>(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER-TEXT_HEIGHT/2) && mouseY<(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER+TEXT_HEIGHT/2)){
-                System.out.println("File chosen: "+cloudFilesNames[i]);
+                System.out.println("File chosen: "+cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 
                 Thread.sleep(200);
                 
                 fileChooser.setTitle("Choose a location to save the file to");
-                fileChooser.setFile(cloudFilesNames[i]);
+                fileChooser.setFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 fileChooser.setMode(FileDialog.SAVE);
                 fileChooser.setVisible(true);
                 
@@ -164,7 +180,7 @@ public class CloudClient{
                   //Send download request to the server
                   stringOutStream.println("downloadFile"); //CONSTANT
                   
-                  receiveFile(cloudFilesNames[i], fileChooser.getDirectory(), fileChooser.getFile());
+                  receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], fileChooser.getDirectory(), fileChooser.getFile());
                   
                   download= true;
                   
@@ -173,7 +189,9 @@ public class CloudClient{
                   stringOutStream.flush();
                   cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
                   updateCloudFilesNames();
-                  display();
+                  if(cloudFilesNames.length%MAX_FILES_PER_PAGE==0)
+                	  pageNo--;
+                  display(pageNo);
                   
                   clearMsg();
                 }
@@ -199,6 +217,8 @@ public class CloudClient{
               
               sendFile(fileChooser.getDirectory(), fileChooser.getFile());
               
+              upload= true;
+              
               Thread.sleep(SLEEP);
               
               //Get the new number of files
@@ -207,10 +227,33 @@ public class CloudClient{
               cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
               
               updateCloudFilesNames();
-              display();
+              display(pageNo);
               
               clearMsg();
             }
+          }
+          if(!download && !upload && mouseX>PAGE_L_X-PAGE_BUTTON_WIDTH/2 && mouseX<PAGE_R_X+PAGE_BUTTON_WIDTH/2
+        		  && mouseY>PAGE_Y-PAGE_BUTTON_HEIGHT/2 && mouseY<PAGE_Y+PAGE_BUTTON_HEIGHT/2) {
+        	  Thread.sleep(200);
+        	  
+        	  if(mouseX<PAGE_L_X+PAGE_BUTTON_WIDTH/2) {
+        		  //The prev button has been hit
+        		  
+        		  if(pageNo>1) {
+        			  pageNo--;
+        			  
+        			  display(pageNo);
+        		  }
+        	  }
+        	  else if(mouseX>PAGE_R_X-PAGE_BUTTON_WIDTH/2){
+        		  //The next button has been hit
+        		  
+        		  if(pageNo<numOfPages) {
+        			  pageNo++;
+        			  
+        			  display(pageNo);
+        		  }
+        	  }
           }
           
           //Thread.sleep(200); //This is so it only executes the block once per mouse press. (Essentially is mouse clicked.)
@@ -220,37 +263,36 @@ public class CloudClient{
       stringOutStream.flush();
     }
     catch(Exception e){
-      if(!setupError){
-        if(e instanceof IOException){
-          System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
-          e.printStackTrace();
-	        
-          JOptionPane.showMessageDialog(myWindow.getFrame(), "Program error. Please contact MNGMNT", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        else if(e instanceof NullPointerException){
-	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
-          e.printStackTrace();
-  	
-          JOptionPane.showMessageDialog(myWindow.getFrame(), "File does not exist", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        else if(e instanceof InterruptedException){
-  	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
-          e.printStackTrace();
-  	
-          JOptionPane.showMessageDialog(myWindow.getFrame(), "Rushed service; failsafe triggered", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        else if(e instanceof SecurityException){
-	  System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
-          e.printStackTrace();
-  	
-          JOptionPane.showMessageDialog(myWindow.getFrame(), "You are unauthorized to access those files", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-      }
+    	if(!setupError) {
+	    	if(e instanceof IOException) {
+	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
+	    		e.printStackTrace();
+	    		
+	    		JOptionPane.showMessageDialog(myWindow.getFrame(), "Program error. Please contact Will", "Error", JOptionPane.ERROR_MESSAGE);
+	    	}
+	    	else if(e instanceof NullPointerException) {
+	    	      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
+	    	      e.printStackTrace();
+	    	      
+	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "File does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+	    	}
+	    	else if(e instanceof InterruptedException) {
+	    	      System.err.println("ERROR: ClientSocket: main: Interrupt encountered, cannot sleep");
+	    	      
+	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "Rushed service; failsafe triggered", "Error", JOptionPane.ERROR_MESSAGE);
+	    	}
+	    	else if(e instanceof SecurityException) {
+	    	      System.err.println("ERROR: ClientSocket: main: Client attempting to access unauthorized files");
+	    	      
+	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "You are unauthorized to access those files", "Error", JOptionPane.ERROR_MESSAGE);
+	    	}
+    	}
     }
     finally{
-      if(myWindow.exists())
-	myWindow.close()
-	    
+    	if(myWindow.exists()) {
+    		myWindow.close();
+    	}
+    	
       System.out.println("\nClosing connection...");
       try{
         if(inStream!=null)
@@ -353,12 +395,14 @@ public class CloudClient{
     System.out.println("Download complete!");
   }
   
-  private static void display(){
+  private static void display(int page){
     myWindow.clear();
     
-    displayCloudFilesNames();
+    displayCloudFilesNames(page);
     
     displayUploadButton();
+    
+    displayPageSelectionUI();
   }
   
   private static void updateCloudFilesNames() throws IOException{
@@ -367,15 +411,17 @@ public class CloudClient{
     for(int i= 0; i<cloudFilesNames.length; i++){
       cloudFilesNames[i]= stringInStream.readLine();
     }
+    
+    numOfPages= (int)Math.ceil((double)cloudFilesNames.length/(double)MAX_FILES_PER_PAGE);
   }
-  private static void displayCloudFilesNames(){
+  private static void displayCloudFilesNames(int page){
     myWindow.setFont(FILES_FONT);
     //Draw the files uploaded
-    for(int i= 0; i<cloudFilesNames.length; i++){
+    for(int i= 0; i<cloudFilesNames.length-((pageNo-1)*MAX_FILES_PER_PAGE) && i<MAX_FILES_PER_PAGE; i++){
       myWindow.setPenColour(WindowedGraphics.BLUE);
       myWindow.filledRectangle(FILES_BOX_X,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,(FILES_BOX_WIDTH)/2,(TEXT_HEIGHT)/2);
       myWindow.setPenColour(WindowedGraphics.WHITE);
-      myWindow.textLeft(LEFT_FILES,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,cloudFilesNames[i]);
+      myWindow.textLeft(LEFT_FILES,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
     }
   }
   
@@ -385,6 +431,21 @@ public class CloudClient{
     myWindow.rectangle(BUTTON_X,BUTTON_Y,(BUTTON_WIDTH)/2,(BUTTON_HEIGHT)/2);
     myWindow.setFont(BUTTON_FONT);
     myWindow.text(BUTTON_X,BUTTON_Y,"Upload");
+  }
+  
+  private static void displayPageSelectionUI() {
+	  myWindow.setFont();
+	  
+	  //Draw the page control management
+	  myWindow.setPenColour(WindowedGraphics.BLACK);
+	  
+	  myWindow.text(width/2, height-100, "Displaying page "+pageNo+" of "+(numOfPages));
+	  
+	  myWindow.text(PAGE_R_X, PAGE_Y, "NEXT");
+	  myWindow.rectangle(PAGE_R_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
+	  
+	  myWindow.text(PAGE_L_X, PAGE_Y, "PREV");
+	  myWindow.rectangle(PAGE_L_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
   }
   
   private static void load(){
