@@ -3,22 +3,13 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 0.8/April 25 2018
- * 
- * USAGE:
- *      The server sends the max number of files allowed to be stored in it's database first to the client.
- *      It then sends the list of files in the cloud (as strings) to the client.
- *      Then, the client must send the following in order listed, before sending the file or receiving the file:
- *          -Own address
- *          -The file name
- *          -The setting ("true" for client uploading
- *          or "false" for client downloading)
- *      The server will then send a string containing the buffer size (an integer)
+ * @version 1.0.5/May 24 2018
  */
 public class CloudServer
 {
     public final static int BUFFER_SIZE= 4096;
     public final static int MAX_FILES_UPLOADED= 5;
+    public final static int MAX_FILES_PER_PAGE= 10;
     public final static int SLEEP= 125;
 
     /**
@@ -80,6 +71,7 @@ final class ServerThread extends Thread{
     
     final private static String BUF_SIZE_REQ= "getBufferSize";
     final private static String NUM_FILES_REQ= "getNumOfFiles";
+    final private static String NUM_PAGES_REQ= "getNumOfPages";
     final private static String FILES_REQ= "getFiles";
     final private static String UPLOAD= "uploadFile";
     final private static String DOWNLOAD= "downloadFile";
@@ -125,6 +117,13 @@ final class ServerThread extends Thread{
                  */
                 else if(line.equals(NUM_FILES_REQ)){
                     stringOutStream.println(numOfFiles());
+                    stringOutStream.flush();
+                }
+                /**
+                 * @return The number of pages of files
+                 */
+                else if(line.equals(NUM_PAGES_REQ)){
+                    stringOutStream.println(numOfFiles()%CloudServer.MAX_FILES_PER_PAGE+1);
                     stringOutStream.flush();
                 }
                 /**
