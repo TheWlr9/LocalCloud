@@ -3,13 +3,12 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.0.5/May 24 2018
+ * @version 1.0.5/May 25 2018
  */
 public class CloudServer
 {
     public final static int BUFFER_SIZE= 4096;
     public final static int MAX_FILES_UPLOADED= 5;
-    public final static int MAX_FILES_PER_PAGE= 10;
     public final static int SLEEP= 125;
 
     /**
@@ -71,7 +70,6 @@ final class ServerThread extends Thread{
     
     final private static String BUF_SIZE_REQ= "getBufferSize";
     final private static String NUM_FILES_REQ= "getNumOfFiles";
-    final private static String NUM_PAGES_REQ= "getNumOfPages";
     final private static String FILES_REQ= "getFiles";
     final private static String UPLOAD= "uploadFile";
     final private static String DOWNLOAD= "downloadFile";
@@ -117,13 +115,6 @@ final class ServerThread extends Thread{
                  */
                 else if(line.equals(NUM_FILES_REQ)){
                     stringOutStream.println(numOfFiles());
-                    stringOutStream.flush();
-                }
-                /**
-                 * @return The number of pages of files
-                 */
-                else if(line.equals(NUM_PAGES_REQ)){
-                    stringOutStream.println(numOfFiles()%CloudServer.MAX_FILES_PER_PAGE+1);
                     stringOutStream.flush();
                 }
                 /**
