@@ -3,8 +3,11 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.5
+ * @version 1.5.1
  * 
+ * _1.5.1_
+ *	~Changed the IOException ERROR pop-up message to better explain the error to the user.
+ *
  * _1.5_
  * 		~Added multiple pages so you can now store INFINITE files, and find them all!
  * 
@@ -26,7 +29,7 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.5";
+	final static private String VERSION= "1.5.1";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
@@ -268,7 +271,7 @@ public class CloudClient{
 	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
 	    		e.printStackTrace();
 	    		
-	    		JOptionPane.showMessageDialog(myWindow.getFrame(), "Program error. Please contact Will", "Error", JOptionPane.ERROR_MESSAGE);
+	    		JOptionPane.showMessageDialog(myWindow.getFrame(), "Packet loss. Please try again", "Error", JOptionPane.ERROR_MESSAGE);
 	    	}
 	    	else if(e instanceof NullPointerException) {
 	    	      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
