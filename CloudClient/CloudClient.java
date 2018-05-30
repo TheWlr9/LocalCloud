@@ -7,6 +7,7 @@
  * 
  * _1.5.1_
  *	~Changed the IOException ERROR pop-up message to better explain the error to the user.
+ *	~Fixed a program crashing bug with switching pages
  *
  * _1.5_
  * 		~Added multiple pages so you can now store INFINITE files, and find them all!
@@ -166,7 +167,7 @@ public class CloudClient{
           boolean download= false;
           boolean upload= false;
           if(mouseX>(FILES_BOX_X-FILES_BOX_WIDTH/2) && mouseX<(FILES_BOX_X+FILES_BOX_WIDTH/2)){
-            for(int i= 0; i<cloudFilesNames.length; i++){
+            for(int i= 0; i<MAX_FILES_PER_PAGE; i++){
               if(mouseY>(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER-TEXT_HEIGHT/2) && mouseY<(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER+TEXT_HEIGHT/2)){
                 System.out.println("File chosen: "+cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 
