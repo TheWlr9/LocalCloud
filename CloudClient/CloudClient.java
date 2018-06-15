@@ -3,20 +3,22 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.5.1
+ * @version 1.6.1
+ * 
+ * _1.6.1_
+ * 		~Added a timeout feature while uploading a file to the cloud to protect against 
+ * 			never properly stopping the thread on the server side, and causing a 
+ * 			HUGE overheat in server CPU.
  * 
  * _1.5.1_
- *	~Changed the IOException ERROR pop-up message to better explain the error to the user.
- *	~Fixed a program crashing bug with switching pages
- *
+ * 		~Changed the IOException ERROR pop-up message to better explain the rror to the user.
+ * 		~Fixed a program crashing bug involving invisible links and switching pages
+ * 
  * _1.5_
  * 		~Added multiple pages so you can now store INFINITE files, and find them all!
  * 
  * _1.2_
  *      ~Added error pop-ups for user clarification
- * 
- * _1.1.9_
- * 		~Changed text font to be more legible
  */
 import java.io.*;
 import java.net.*;
@@ -30,7 +32,7 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.5.1";
+	final static private String VERSION= "1.6.1";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
@@ -39,6 +41,7 @@ public class CloudClient{
   
   final static private int MAX_FILES_PER_PAGE= 10;
   
+  private static long maxPingRecorded;
   private static int bufferSize;
   private static int pageNo;
   private static int numOfPages;
@@ -217,6 +220,8 @@ public class CloudClient{
               
               load();
               
+              maxPingRecorded= maxPing();
+              
               stringOutStream.println("uploadFile"); //CONSTANT
               
               sendFile(fileChooser.getDirectory(), fileChooser.getFile());
@@ -290,6 +295,9 @@ public class CloudClient{
 	    	      
 	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "You are unauthorized to access those files", "Error", JOptionPane.ERROR_MESSAGE);
 	    	}
+	    	else {
+	    		e.printStackTrace();
+	    	}
     	}
     }
     finally{
@@ -328,7 +336,7 @@ public class CloudClient{
   }
   
   private static void sendFile(String path, String fileName) throws IOException, InterruptedException, SecurityException{
-    file= new File(path+fileName);
+	file= new File(path+fileName);
     if(fileSend!=null)
       fileSend.close();
     fileSend= new FileInputStream(file);
@@ -336,8 +344,9 @@ public class CloudClient{
     System.out.println("Uploading file...");
     
     //Draw the empty loading buffer
-	myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);	
-    
+	myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);
+	
+	long waitTime= maxPingRecorded/2;
     int bytesRead= 0;
     int totalBytesRead= 0;
     
@@ -363,7 +372,41 @@ public class CloudClient{
     
     outStream.flush();
     
-    System.out.println("Upload complete!");
+    Thread.sleep(waitTime);
+    if(!stringInStream.ready()) {
+    	while(!stringInStream.ready()) {
+    		outStream.write(1);
+    		outStream.flush();
+    	}
+    	
+    	stringInStream.readLine(); //Clear the "finished" message
+    	
+    	System.out.println("Upload failed");
+    	
+    	if(JOptionPane.OK_OPTION==JOptionPane.showConfirmDialog(myWindow.getFrame(),"Would you like to retry?","Error in sending file",JOptionPane.OK_CANCEL_OPTION)) {
+    		System.out.println("File chosen: "+path+fileName);
+            
+            load();
+            
+            maxPingRecorded= maxPing();
+            
+            stringOutStream.println("uploadFile"); //CONSTANT
+            
+            sendFile(path, fileName);
+    	}
+    	else { //The user closed or selected cancel
+    		//Send the signal to delete the file from the cloud
+    		stringOutStream.println("delete");
+    		stringOutStream.flush();
+    		stringOutStream.println(fileName);
+    		stringOutStream.flush();
+    	}
+    }
+    else {
+    	System.out.println("Upload complete!");
+    	stringInStream.readLine(); //Clear the "finished" message
+    }
+    
     //Maybe delete the file now?
   }
   private static void receiveFile(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
@@ -397,6 +440,33 @@ public class CloudClient{
     }
     
     System.out.println("Download complete!");
+  }
+  
+  public static long maxPing() throws IOException, InterruptedException {
+	  byte[] dummy= new byte[bufferSize];
+	  int maxNumOfAttempts= 3;
+	  int numOfAttempts;
+  
+	  numOfAttempts= 0;
+	  
+	  stringOutStream.println("ping");
+	  stringOutStream.flush();
+	  
+	  outStream.write(dummy);
+	  outStream.flush();
+	  
+	  double startTime= System.currentTimeMillis();
+	  
+	  while(!stringInStream.ready() && numOfAttempts<maxNumOfAttempts) {
+		  Thread.sleep(SLEEP);
+		  numOfAttempts++;
+	  }
+	  if(numOfAttempts<maxNumOfAttempts)
+		  inStream.read(dummy);
+	  else
+		  startTime= System.currentTimeMillis();
+	  
+	  return (long)(System.currentTimeMillis()-startTime);
   }
   
   private static void display(int page){
