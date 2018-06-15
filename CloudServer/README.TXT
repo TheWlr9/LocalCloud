@@ -12,6 +12,6 @@ USER INSTRUCTIONS:
   then you must change the port# in the CloudClient.java code to match the preferred port#. If you are using the shell script to run the 
   server as a service, you must also manipulate the variables at the top of cloudServer.sh to your liking. (Including the desired port#).
 
-CloudServer v1.1.5 compatible with CloudClient v1.6.1 or later
+CloudServer v1.1.5 or later, compatible with CloudClient v1.6.1 or later.
 
-CloudServer v.1.0.0 to v.1.0.5 compatible with Cloudclient v.1.0.0 to v.1.5.1
+CloudServer v.1.0.0 to v.1.0.5, compatible with Cloudclient v.1.0.0 to v.1.5.1.
