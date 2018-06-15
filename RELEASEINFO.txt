@@ -1,0 +1,14 @@
+Releases are not accurate until v1.6.1 because I didn't know about the existance of Github's releases!
+
+The old releases before v1.6.1 were:
+
+1.5.1
+1.5.0
+1.2.0
+1.1.9
+1.0.5
+1.0.0
+
+So whatever the # of releases Github shows, add +6!
+
+You can view what each of the versions changed/removed/added in the comments at the top of the source code.
