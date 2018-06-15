@@ -3,12 +3,13 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.0.5/May 25 2018
+ * @version 1.1.5/June 14 2018
  */
 public class CloudServer
 {
     public final static int BUFFER_SIZE= 4096;
     public final static int MAX_FILES_UPLOADED= 5;
+    public final static int MAX_FILES_PER_PAGE= 10;
     public final static int SLEEP= 125;
 
     /**
@@ -68,11 +69,14 @@ final class ServerThread extends Thread{
     
     private static File parentDirectory= new File(FILE_PATH);
     
+    final private static String PING= "ping";
     final private static String BUF_SIZE_REQ= "getBufferSize";
     final private static String NUM_FILES_REQ= "getNumOfFiles";
+    final private static String NUM_PAGES_REQ= "getNumOfPages";
     final private static String FILES_REQ= "getFiles";
     final private static String UPLOAD= "uploadFile";
     final private static String DOWNLOAD= "downloadFile";
+    final private static String DELETE= "delete";
     final private static String SHUTDOWN= "logoff";
     
     ServerThread(Socket s){
@@ -101,11 +105,21 @@ final class ServerThread extends Thread{
             while(!close){
                 while(line==null)
                     line= stringInStream.readLine();
+                line= line.trim();
                 
+                /**
+                 * @return The sent buffer
+                 */
+                if(line.equals(PING)){
+                    byte[] dummy= new byte[CloudServer.BUFFER_SIZE];
+                    inStream.read(dummy);
+                    outStream.write(dummy);
+                    outStream.flush();
+                }
                 /**
                  * @return The byte array size
                  */
-                if(line.equals(BUF_SIZE_REQ)){
+                else if(line.equals(BUF_SIZE_REQ)){
                     System.out.println("Transmitting buffer size");
                     stringOutStream.println(CloudServer.BUFFER_SIZE);
                     stringOutStream.flush();
@@ -115,6 +129,13 @@ final class ServerThread extends Thread{
                  */
                 else if(line.equals(NUM_FILES_REQ)){
                     stringOutStream.println(numOfFiles());
+                    stringOutStream.flush();
+                }
+                /**
+                 * @return The number of pages of files
+                 */
+                else if(line.equals(NUM_PAGES_REQ)){
+                    stringOutStream.println(numOfFiles()%CloudServer.MAX_FILES_PER_PAGE+1);
                     stringOutStream.flush();
                 }
                 /**
@@ -129,8 +150,18 @@ final class ServerThread extends Thread{
                     stringOutStream.flush();
                 }
                 /**
+                 * @param fileName the filename of the file the client wants to delete
+                 * Deletes the specified file
+                 */
+                else if(line.equals(DELETE)){
+                    System.out.println("Deleting file");
+                    file= new File(FILE_PATH+stringInStream.readLine());
+                    file.delete();
+                }
+                /**
                  * @param Requires the file name
                  * @param Requires the size of the file being uploaded in bytes
+                 * @return A confirmation string when completed
                  */
                 else if(line.equals(UPLOAD)){
                     file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
@@ -162,7 +193,7 @@ final class ServerThread extends Thread{
                     System.out.println("Graceful logoff attempt");
                 }
                 else{
-                    System.out.println("Error: Invalid request");
+                    System.out.println("Error: Invalid request:"+line);
                 }
                 
                 line= null;
@@ -238,6 +269,9 @@ final class ServerThread extends Thread{
             fileOutStream.write(byteArray,0,bytesRead);
             totalBytesRead+= bytesRead;
         }
+        
+        stringOutStream.println("Finished!");
+        stringOutStream.flush();
         
         System.out.println("File received!");
     }
