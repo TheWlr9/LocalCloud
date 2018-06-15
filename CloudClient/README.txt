@@ -10,3 +10,7 @@ Instructions:
       it is not restricted. This does not remove the file from the client, it only uploads a copy of the file to the cloud.
     - Clicking on a file in the Client window will download that file from the cloud into the Client (you get to choose where it gets 
       downloaded). This will remove the file from the cloud.
+
+CloudClient v.1.6.1 to latest version, works with CloudServer v.1.1.5 to latest version.
+
+CloudClient v.1.0.0 to v.1.5.1, works with CloudServer v.1.0.0 to v.1.0.5.
