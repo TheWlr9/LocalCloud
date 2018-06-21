@@ -3,7 +3,7 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.2.5/June 20 2018
+ * @version 1.2.6/June 21 2018
  */
 public class CloudServer
 {
@@ -243,10 +243,14 @@ final class ServerThread extends Thread{
         
         outStream.flush();
         
-        System.out.println("File sent!");
-        
-        //Delete the file now
-        file.delete();
+        if(stringInStream.readLine().equals(SUCCESS_MSG)){
+            System.out.println("Success!");
+            
+            //Delete the file now
+            file.delete();
+        }
+        else
+            close= true;
     }
     private void receiveFile() throws SocketTimeoutException, IOException{
         System.out.println("Receiving file...");
