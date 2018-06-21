@@ -11,6 +11,8 @@ Instructions:
     - Clicking on a file in the Client window will download that file from the cloud into the Client (you get to choose where it gets 
       downloaded). This will remove the file from the cloud.
 
-CloudClient v.1.6.1 or later, compatible with CloudServer v.1.1.5 or later.
+CloudClient v.1.7.1 or later, compatible with CloudServer v1.2.5 or later.
+
+CloudClient v.1.6.1, compatible with CloudServer v.1.1.5.
 
 CloudClient v.1.0.0 to v.1.5.1, compatible with CloudServer v.1.0.0 to v.1.0.5.
