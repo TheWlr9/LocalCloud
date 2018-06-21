@@ -147,6 +147,10 @@ final class ServerThread extends Thread{
                  * @param Requires the file name
                  * @param Requires the size of the file being uploaded in bytes
                  * @return A confirmation string once completed
+                 *
+                 * @throws SocketTimeoutException if there is packet loss.
+                 *
+                 * Sends a receipt after operation.
                  */
                 else if(line.equals(UPLOAD)){
                     file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
@@ -162,6 +166,8 @@ final class ServerThread extends Thread{
                 /**
                  * @param Requires the file name
                  * Sends the size of the file in bytes before sending the file.
+                 *
+                 * Must receive a receipt at the end of the operation.
                  */
                 else if(line.equals(DOWNLOAD)){
                     file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
