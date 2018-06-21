@@ -368,6 +368,9 @@ public class CloudClient{
     }
   }
   
+  /*
+  * Receives a receipt at the end.
+  */
   private static void sendFile(String path, String fileName) throws IOException, InterruptedException, SecurityException{
 	file= new File(path+fileName);
     if(fileSend!=null)
@@ -417,6 +420,10 @@ public class CloudClient{
     
     //Maybe delete the file now?
   }
+  
+  /*
+  * Sends a receipt at the end.
+  */
   private static void receiveFile throws SocketTimeoutException, SocketException(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
     file= new File(localPath+localFileName);
     if(fileReceive!=null)
