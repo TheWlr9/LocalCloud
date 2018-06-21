@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.7.1
+ * @version 1.7.2
+ * 
+ * _1.7.2_
+ *		~Added the timeout feature when downloading files as well!
  * 
  * _1.7.1_
  * 		~Changed the timeout feature on the upload option to work MUCH better.
@@ -35,14 +38,16 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.7.1";
+	final static private String VERSION= "1.7.2";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
   final static private String FILE_PATH= "docs"+File.separator;
   final static private int SLEEP= 250;
   
+  final static private int TIMEOUT= 3000;
   final static private int MAX_FILES_PER_PAGE= 10;
+  final static private String ERROR_MSG= "failed";
   final static private String SUCCESS_MSG= "success";
   final static private String PING= "ping";
   final static private String BUF_SIZE_REQ= "getBufferSize";
@@ -291,7 +296,17 @@ public class CloudClient{
     }
     catch(Exception e){
     	if(!setupError) {
-	    	if(e instanceof IOException) {
+		if(e instanceof SocketTimeoutException){
+			//Send receipt
+			stringOutStream.println(ERROR_MSG);
+			stringOutStream.flush();
+			
+			System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised");
+			e.printStackTrace();
+			
+			JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again!", "Error: Packet loss",JOptionPane.ERROR_MESSAGE);
+		}
+	    	else if(e instanceof IOException) {
 	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
 	    		e.printStackTrace();
 	    		
@@ -402,7 +417,7 @@ public class CloudClient{
     
     //Maybe delete the file now?
   }
-  private static void receiveFile(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
+  private static void receiveFile throws SocketTimeoutException, SocketException(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
     file= new File(localPath+localFileName);
     if(fileReceive!=null)
       fileReceive.close();
@@ -413,6 +428,8 @@ public class CloudClient{
     
     //Draw the empty loading buffer
     myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);
+	 
+    serverSocket.setSoTimeout(TIMEOUT);
     
     //Need to send the file name to the server
     stringOutStream.println(remoteFileName);
@@ -431,6 +448,12 @@ public class CloudClient{
       myWindow.setPenColour(WindowedGraphics.BLUE);
       myWindow.filledRectangle(LOADING_LEFT+((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT)/2, LOADING_Y, (((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT))/2, (LOADING_HEIGHT)/2);
     }
+	  
+    serverSocket.setSoTimeout(0);
+	  
+    //Send receipt
+    stringOutStream.println(SUCCESS_MSG);
+    stringOutStream.flush();
     
     System.out.println("Download complete!");
   }
