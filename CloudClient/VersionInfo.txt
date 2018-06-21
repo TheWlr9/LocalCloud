@@ -1,0 +1,31 @@
+ /**
+  * _1.7.2_
+  *     ~Added the timeout feature when downloading files as well!
+  * 
+  * _1.7.1_
+  * 		~Changed the timeout feature on the upload option to work MUCH better.
+  * 
+  * _1.6.1_
+  * 		~Added a timeout feature while uploading a file to the cloud to protect against 
+  * 			never properly stopping the thread on the server side, and causing a 
+  * 			HUGE overheat in server CPU.
+  * 
+  * _1.5.1_
+  * 		~Changed the IOException ERROR pop-up message to better explain the error to the user.
+  * 		~Fixed a program crashing bug involving invisible links and switching pages
+  * 
+  * _1.5_
+  * 		~Added multiple pages so you can now store INFINITE files, and find them all!
+  * 
+  * _1.2_
+  *      ~Added error pop-ups for user clarification
+  * 
+  * _1.1.9_
+  *      ~Added a loading bar!
+  *
+  * _1.0.9_
+  *      ~Made the text a bit nicer!
+  *
+  * _1.0.0_
+  *      ~Full release!!
+  */
