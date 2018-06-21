@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.6.1
+ * @version 1.7.1
+ * 
+ * _1.7.1_
+ * 		~Changed the timeout feature on the upload option to work MUCH better.
  * 
  * _1.6.1_
  * 		~Added a timeout feature while uploading a file to the cloud to protect against 
@@ -32,7 +35,7 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.6.1";
+	final static private String VERSION= "1.7.1";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
@@ -40,7 +43,16 @@ public class CloudClient{
   final static private int SLEEP= 250;
   
   final static private int MAX_FILES_PER_PAGE= 10;
+  final static private String SUCCESS_MSG= "success";
+  final static private String PING= "ping";
+  final static private String BUF_SIZE_REQ= "getBufferSize";
+  final static private String NUM_FILES_REQ= "getNumOfFiles";
+  final static private String FILES_REQ= "getFiles";
+  final static private String UPLOAD= "uploadFile";
+  final static private String DOWNLOAD= "downloadFile";
+  final static private String SHUTDOWN= "logoff";
   
+  private static boolean escaping;
   private static long maxPingRecorded;
   private static int bufferSize;
   private static int pageNo;
@@ -139,11 +151,13 @@ public class CloudClient{
     try{
     	pageNo= 1;
     	
+    	escaping= false;
+    	
       //HERE WAS THE NETWORKING STUFF
       stringOutStream.println(serverSocket.getLocalAddress()); //Must send over the IP address first
       stringOutStream.flush();
       
-      stringOutStream.println("getBufferSize");
+      stringOutStream.println(BUF_SIZE_REQ);
       stringOutStream.flush();
       //Receive the buffer size
       bufferSize= Integer.parseInt(stringInStream.readLine());
@@ -151,7 +165,7 @@ public class CloudClient{
       
       byteArray= new byte[bufferSize];
       
-      stringOutStream.println("getNumOfFiles");
+      stringOutStream.println(NUM_FILES_REQ);
       stringOutStream.flush();
       int maxFilesUploaded= Integer.parseInt(stringInStream.readLine());
       System.out.println("FILES: "+maxFilesUploaded);
@@ -185,14 +199,14 @@ public class CloudClient{
                   load();
                   
                   //Send download request to the server
-                  stringOutStream.println("downloadFile"); //CONSTANT
+                  stringOutStream.println(DOWNLOAD); //CONSTANT
                   
                   receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], fileChooser.getDirectory(), fileChooser.getFile());
                   
                   download= true;
                   
                   //Get the new number of files
-                  stringOutStream.println("getNumOfFiles");
+                  stringOutStream.println(NUM_FILES_REQ);
                   stringOutStream.flush();
                   cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
                   updateCloudFilesNames();
@@ -222,23 +236,25 @@ public class CloudClient{
               
               maxPingRecorded= maxPing();
               
-              stringOutStream.println("uploadFile"); //CONSTANT
+              stringOutStream.println(UPLOAD); //CONSTANT
               
               sendFile(fileChooser.getDirectory(), fileChooser.getFile());
               
-              upload= true;
-              
-              Thread.sleep(SLEEP);
-              
-              //Get the new number of files
-              stringOutStream.println("getNumOfFiles");
-              stringOutStream.flush();
-              cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
-              
-              updateCloudFilesNames();
-              display(pageNo);
-              
-              clearMsg();
+              if(!escaping) {
+            	  upload= true;
+            	  
+            	  Thread.sleep(SLEEP);
+        	  
+            	  //Get the new number of files
+            	  stringOutStream.println(NUM_FILES_REQ);
+            	  stringOutStream.flush();
+            	  cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
+            	  
+            	  updateCloudFilesNames();
+            	  display(pageNo);
+            	  
+            	  clearMsg();
+              }
             }
           }
           if(!download && !upload && mouseX>PAGE_L_X-PAGE_BUTTON_WIDTH/2 && mouseX<PAGE_R_X+PAGE_BUTTON_WIDTH/2
@@ -268,8 +284,10 @@ public class CloudClient{
           //Thread.sleep(200); //This is so it only executes the block once per mouse press. (Essentially is mouse clicked.)
         }
       }
-      stringOutStream.println("logoff");
-      stringOutStream.flush();
+      if(!escaping) {
+    	  stringOutStream.println(SHUTDOWN);
+    	  stringOutStream.flush();
+      }
     }
     catch(Exception e){
     	if(!setupError) {
@@ -372,39 +390,14 @@ public class CloudClient{
     
     outStream.flush();
     
-    Thread.sleep(waitTime);
-    if(!stringInStream.ready()) {
-    	while(!stringInStream.ready()) {
-    		outStream.write(1);
-    		outStream.flush();
-    	}
-    	
-    	stringInStream.readLine(); //Clear the "finished" message
-    	
-    	System.out.println("Upload failed");
-    	
-    	if(JOptionPane.OK_OPTION==JOptionPane.showConfirmDialog(myWindow.getFrame(),"Would you like to retry?","Error in sending file",JOptionPane.OK_CANCEL_OPTION)) {
-    		System.out.println("File chosen: "+path+fileName);
-            
-            load();
-            
-            maxPingRecorded= maxPing();
-            
-            stringOutStream.println("uploadFile"); //CONSTANT
-            
-            sendFile(path, fileName);
-    	}
-    	else { //The user closed or selected cancel
-    		//Send the signal to delete the file from the cloud
-    		stringOutStream.println("delete");
-    		stringOutStream.flush();
-    		stringOutStream.println(fileName);
-    		stringOutStream.flush();
-    	}
-    }
+    if(stringInStream.readLine().equals(SUCCESS_MSG))
+    	System.out.println("Success!");
     else {
-    	System.out.println("Upload complete!");
-    	stringInStream.readLine(); //Clear the "finished" message
+    	JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again", "Error: Packet loss", JOptionPane.ERROR_MESSAGE);
+    	
+    	escaping= true;
+    	
+    	myWindow.close();
     }
     
     //Maybe delete the file now?
@@ -449,7 +442,7 @@ public class CloudClient{
   
 	  numOfAttempts= 0;
 	  
-	  stringOutStream.println("ping");
+	  stringOutStream.println(PING);
 	  stringOutStream.flush();
 	  
 	  outStream.write(dummy);
@@ -480,7 +473,7 @@ public class CloudClient{
   }
   
   private static void updateCloudFilesNames() throws IOException{
-    stringOutStream.println("getFiles");
+    stringOutStream.println(FILES_REQ);
     stringOutStream.flush();
     for(int i= 0; i<cloudFilesNames.length; i++){
       cloudFilesNames[i]= stringInStream.readLine();
