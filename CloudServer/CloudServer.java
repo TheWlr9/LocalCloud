@@ -3,7 +3,7 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.1.5/June 14 2018
+ * @version 1.2.5/June 20 2018
  */
 public class CloudServer
 {
@@ -11,6 +11,7 @@ public class CloudServer
     public final static int MAX_FILES_UPLOADED= 5;
     public final static int MAX_FILES_PER_PAGE= 10;
     public final static int SLEEP= 125;
+    public final static int TIMEOUT= 3000;
 
     /**
      * Constructor for objects of class CloudServer
@@ -46,7 +47,7 @@ public class CloudServer
                         serverThread.start();
                     }
                     catch(Exception e){
-                        System.err.println("ERROR: main: Error in accepting client connection or starting the server thread for the client socket");
+                        System.err.println("ERROR: main: Error in setting up client connection or starting the server thread for the client socket");
                     }
                 }
             }   
@@ -69,14 +70,14 @@ final class ServerThread extends Thread{
     
     private static File parentDirectory= new File(FILE_PATH);
     
+    final private static String ERROR_MSG= "failed";
+    final private static String SUCCESS_MSG= "success";
     final private static String PING= "ping";
     final private static String BUF_SIZE_REQ= "getBufferSize";
     final private static String NUM_FILES_REQ= "getNumOfFiles";
-    final private static String NUM_PAGES_REQ= "getNumOfPages";
     final private static String FILES_REQ= "getFiles";
     final private static String UPLOAD= "uploadFile";
     final private static String DOWNLOAD= "downloadFile";
-    final private static String DELETE= "delete";
     final private static String SHUTDOWN= "logoff";
     
     ServerThread(Socket s){
@@ -132,13 +133,6 @@ final class ServerThread extends Thread{
                     stringOutStream.flush();
                 }
                 /**
-                 * @return The number of pages of files
-                 */
-                else if(line.equals(NUM_PAGES_REQ)){
-                    stringOutStream.println(numOfFiles()%CloudServer.MAX_FILES_PER_PAGE+1);
-                    stringOutStream.flush();
-                }
-                /**
                  * @return A String[] of the file names uploaded to the cloud
                  */
                 else if(line.equals(FILES_REQ)){
@@ -150,18 +144,9 @@ final class ServerThread extends Thread{
                     stringOutStream.flush();
                 }
                 /**
-                 * @param fileName the filename of the file the client wants to delete
-                 * Deletes the specified file
-                 */
-                else if(line.equals(DELETE)){
-                    System.out.println("Deleting file");
-                    file= new File(FILE_PATH+stringInStream.readLine());
-                    file.delete();
-                }
-                /**
                  * @param Requires the file name
                  * @param Requires the size of the file being uploaded in bytes
-                 * @return A confirmation string when completed
+                 * @return A confirmation string once completed
                  */
                 else if(line.equals(UPLOAD)){
                     file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
@@ -199,14 +184,20 @@ final class ServerThread extends Thread{
                 line= null;
             }
         }
-        catch(IOException e){
-            System.out.println("ERROR: ServerThread.java: run: Error in setup with client, or reading/writing files");
-        }
         catch(NullPointerException e){
             System.out.println("Connection terminated");
         }
         catch(InterruptedException e){
             System.out.println("Error in sleeping");
+        }
+        catch(SocketTimeoutException ste){
+            stringOutStream.println(ERROR_MSG);
+            stringOutStream.flush();
+            
+            System.out.println("Packet loss");
+        }
+        catch(IOException e){
+            System.out.println("ERROR: ServerThread.java: run: Error in setup with client, or reading/writing files");
         }
         finally{
             try{
@@ -257,12 +248,14 @@ final class ServerThread extends Thread{
         //Delete the file now
         file.delete();
     }
-    private void receiveFile() throws IOException{
+    private void receiveFile() throws SocketTimeoutException, IOException{
         System.out.println("Receiving file...");
         
         long sizeOfFile= Long.parseLong(stringInStream.readLine());
         long totalBytesRead= 0;
         int bytesRead= 0;
+        
+        s.setSoTimeout(CloudServer.TIMEOUT); //Sets the timeout feature for the socket
         
         while(totalBytesRead<sizeOfFile){
             bytesRead= inStream.read(byteArray);
@@ -270,7 +263,9 @@ final class ServerThread extends Thread{
             totalBytesRead+= bytesRead;
         }
         
-        stringOutStream.println("Finished!");
+        s.setSoTimeout(0); //Disables the timeout feature for the socket
+        
+        stringOutStream.println(SUCCESS_MSG);
         stringOutStream.flush();
         
         System.out.println("File received!");
