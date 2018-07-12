@@ -3,7 +3,7 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.2.6/June 21 2018
+ * @version 1.2.7/July 11 2018
  */
 public class CloudServer
 {
@@ -22,35 +22,25 @@ public class CloudServer
     }
     
     public static void main(String[] args){
-        if(args.length!=1)
-            System.err.println("ERROR. Please specify port number");
-        else{
-            int port= Integer.parseInt(args[0]);
-            
-            if(port==0)
-                System.err.println("ERROR: main: port read failure");
-            else{
-                Socket clientSocket= null;
-                ServerSocket serverSocket= null;
-                try{
-                    serverSocket= new ServerSocket(port);
-                }
-                catch(IOException e){
-                    System.err.println("ERROR: main: Error in initializing sockets");
-                }
+        Socket clientSocket= null;
+        ServerSocket serverSocket= null;
+        try{
+            serverSocket= new ServerSocket(port);
+        }
+        catch(IOException e){
+            System.err.println("ERROR: main: Error in initializing sockets");
+        }
+
+        while(true){
+            try{
+                clientSocket= serverSocket.accept();
                 
-                while(true){
-                    try{
-                        clientSocket= serverSocket.accept();
-                        
-                        ServerThread serverThread= new ServerThread(clientSocket);
-                        serverThread.start();
-                    }
-                    catch(Exception e){
-                        System.err.println("ERROR: main: Error in setting up client connection or starting the server thread for the client socket");
-                    }
-                }
-            }   
+                ServerThread serverThread= new ServerThread(clientSocket);
+                serverThread.start();
+            }
+            catch(Exception e){
+                System.err.println("ERROR: main: Error in setting up client connection or starting the server thread for the client socket");
+            }
         }
     }
 }
@@ -83,6 +73,8 @@ final class ServerThread extends Thread{
     
     ServerThread(Socket s){
         this.s= s;
+        
+        this.s.setPerformancePreferences(0,0,1); //Prioritizs bandwidth
     }
     
     public void run(){
