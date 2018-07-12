@@ -10,7 +10,7 @@ AUTHORS: William Ritchie
 USER INSTRUCTIONS:
   The CloudClient code, and the CloudServer code is set to port# 42843. If you want to use a different port, 
   then you must change the port# in the CloudClient.java code, and the port# in the CloudServer.java code to match. If you are using the shell script to run the 
-  server as a service, you must also manipulate the variables at the top of cloudServer.sh to your liking. (Including the desired port#).
+  server as a service, you must also manipulate the variables at the top of cloudServer.sh to your liking.
 
 CloudServer v1.1.5 or later, compatible with CloudClient v1.6.1 or later.
 
