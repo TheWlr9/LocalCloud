@@ -1,0 +1,55 @@
+? == optional
+
+
+
+STEP 1: SETTING UP AND STARTING YOUR CLOUD SERVER:
+	OPTION 1: SETTING UP AND STARTING YOUR CLOUD SERVER NORMALLY:
+		1. On the machine that will host the cloud server, download CloudServer.java from this Repo.
+			a) Remember to download a copy of LICENCE as well!
+		?2. Set the PORT number to whatever you want, in CloudServer.java. The default is 42843.
+		2. Compile CloudServer.java by issuing the command: javac CloudServer.java
+		3. In the same directory that holds the newly compiled CloudServer.class, create a new directory named "docs". This is
+			where your "cloud" will store the files that have been uploaded.
+		4. Run java CloudServer.class!
+	
+	OPTION 2: SETTING UP AND STARTING YOUR CLOUD SERVER AS A SERVICE:
+		1. On the machine that will host the cloud server, download CloudServer.java, and cloudServer.sh from this Repo.
+			a) Remember to download a copy of LICENCE as well!
+		?2. Set the PORT number to whatever you want, in CloudServer.java. The default is 42843.
+		2. Compile CloudServer.java by issuing the command: javac CloudServer.java
+		3. In the same directory that holds the newly compiled CloudServer.class, create a new directory named "docs". This is
+			where your "cloud" will store the files that have been uploaded.
+		4. Edit cloudServer.sh so that the constants at the top of the file relate to your directories/files/etc.
+		5. Run cloudServer.sh start!
+
+
+
+STEP 2: SETTING UP A CLOUD CLIENT:
+	Any computer that is connected to the same WLAN/LAN as your cloud server, can become a client and access the cloud storage!
+	1. On the computers you want to have access to the cloud storage on, download CloudClient.java, and the graphics folder,
+		from the Repo.
+		a) Remember to download a copy of LICENCE as well!
+	?2. If you have changed the PORT number in CloudServer.java, change the PORT number to match the PORT number in
+		CloudServer.java.
+	2. Change the ADDRESS constant in CloudClient.java to match the IP address of your cloud host (the server machine).
+		a) Remember, the ADDRESS constant is a String! So if your IP address is 127.0.0.101, change ADDRESS to "127.0.0.101".
+	3. Compile CloudClient.java buy issuing the command javac CloudClient.java
+	4. Compile WindowedGraphics.java buy issuing the 2 commands "cd graphics/" and "javac WindowedGraphics.java".
+
+
+
+STEP 3: STARTING A CLOUD CLIENT:
+	1. Run java CloudClient.class whenever you want!
+
+
+
+Notes:
+The clients can connect to the server whenever the server is running, and if the client can access the IP address of the server.
+If you are running the cloud server as a service, you can restart the service at any time by issuing the cloudServer.sh restart
+command, and stop it by issuing the cloudServer.sh stop command.
+
+If you want to access the cloud from outside your WLAN, all you have to do is port forward (the port number chosen) from your
+public IP address to your local IP address, on your router. *WARNING*: As stated in the LICENCE, I am not responsible for any
+invasions of privacy, attacks, or any other type of network hacking that may occur in opening a port on your router. This
+application DOES NOT have any security measures to prevent unauthorized access into your cloud database! I may implement
+something in the future, but this application was/is meant to only be a WLAN cloud, not a remote cloud. 
