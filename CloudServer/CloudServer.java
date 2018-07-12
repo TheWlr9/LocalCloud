@@ -62,6 +62,7 @@ final class ServerThread extends Thread{
     BufferedReader stringInStream;
     PrintWriter stringOutStream;
     byte[] byteArray= new byte[CloudServer.BUFFER_SIZE]; //BUFFER_SIZE should be the same size as the client's BUFFER_SIZE
+    boolean close;
     private File file= null;
     FileOutputStream fileOutStream= null;
     FileInputStream fileInStream= null;
@@ -100,7 +101,7 @@ final class ServerThread extends Thread{
             //Must receive connection address FIRST
             System.out.println("Connection made with "+stringInStream.readLine());
             
-            boolean close= false;
+            close= false;
             String line= null;
             
             while(!close){
