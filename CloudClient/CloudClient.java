@@ -3,10 +3,7 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.7.2
- * 
- * _1.7.2_
- *		~Added the timeout feature when downloading files as well!
+ * @version 1.7.1
  * 
  * _1.7.1_
  * 		~Changed the timeout feature on the upload option to work MUCH better.
@@ -38,7 +35,7 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.7.2";
+	final static private String VERSION= "1.7.1";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
@@ -47,7 +44,6 @@ public class CloudClient{
   
   final static private int TIMEOUT= 3000;
   final static private int MAX_FILES_PER_PAGE= 10;
-  final static private String ERROR_MSG= "failed";
   final static private String SUCCESS_MSG= "success";
   final static private String PING= "ping";
   final static private String BUF_SIZE_REQ= "getBufferSize";
@@ -135,6 +131,9 @@ public class CloudClient{
     
     try{
       serverSocket= new Socket(ADDRESS, PORT);
+      
+      serverSocket.setPerformancePreferences(0, 0, 1); //Prioritizes bandwidth
+      serverSocket.setTrafficClass(0x18); //Prioritizes high throughput and low delay
       
       inStream= serverSocket.getInputStream();
       stringInStream= new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
@@ -296,17 +295,7 @@ public class CloudClient{
     }
     catch(Exception e){
     	if(!setupError) {
-		if(e instanceof SocketTimeoutException){
-			//Send receipt
-			stringOutStream.println(ERROR_MSG);
-			stringOutStream.flush();
-			
-			System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised");
-			e.printStackTrace();
-			
-			JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again!", "Error: Packet loss",JOptionPane.ERROR_MESSAGE);
-		}
-	    	else if(e instanceof IOException) {
+	    	if(e instanceof IOException) {
 	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
 	    		e.printStackTrace();
 	    		
@@ -368,9 +357,6 @@ public class CloudClient{
     }
   }
   
-  /*
-  * Receives a receipt at the end.
-  */
   private static void sendFile(String path, String fileName) throws IOException, InterruptedException, SecurityException{
 	file= new File(path+fileName);
     if(fileSend!=null)
@@ -420,11 +406,7 @@ public class CloudClient{
     
     //Maybe delete the file now?
   }
-  
-  /*
-  * Sends a receipt at the end.
-  */
-  private static void receiveFile throws SocketTimeoutException, SocketException(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
+  private static void receiveFile(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
     file= new File(localPath+localFileName);
     if(fileReceive!=null)
       fileReceive.close();
@@ -435,7 +417,7 @@ public class CloudClient{
     
     //Draw the empty loading buffer
     myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);
-	 
+    
     serverSocket.setSoTimeout(TIMEOUT);
     
     //Need to send the file name to the server
@@ -455,9 +437,9 @@ public class CloudClient{
       myWindow.setPenColour(WindowedGraphics.BLUE);
       myWindow.filledRectangle(LOADING_LEFT+((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT)/2, LOADING_Y, (((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT))/2, (LOADING_HEIGHT)/2);
     }
-	  
+    
     serverSocket.setSoTimeout(0);
-	  
+    
     //Send receipt
     stringOutStream.println(SUCCESS_MSG);
     stringOutStream.flush();
