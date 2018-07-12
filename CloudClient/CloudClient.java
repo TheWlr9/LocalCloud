@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.7.1
+ * @version 1.7.2
+ * 
+ * _1.7.2_
+ * 		~Added the timeout feature to the file download as well!
  * 
  * _1.7.1_
  * 		~Changed the timeout feature on the upload option to work MUCH better.
@@ -35,7 +38,7 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.7.1";
+	final static private String VERSION= "1.7.2";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
@@ -45,6 +48,7 @@ public class CloudClient{
   final static private int TIMEOUT= 3000;
   final static private int MAX_FILES_PER_PAGE= 10;
   final static private String SUCCESS_MSG= "success";
+  final static private String ERROR_MSG= "failed";
   final static private String PING= "ping";
   final static private String BUF_SIZE_REQ= "getBufferSize";
   final static private String NUM_FILES_REQ= "getNumOfFiles";
@@ -295,7 +299,16 @@ public class CloudClient{
     }
     catch(Exception e){
     	if(!setupError) {
-	    	if(e instanceof IOException) {
+    		if(e instanceof SocketTimeoutException){ 
+    			//Send receipt 
+    			stringOutStream.println(ERROR_MSG);
+    			stringOutStream.flush(); 
+    			System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised"); 
+    			e.printStackTrace(); 
+
+    			JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again!", "Error: Packet loss",JOptionPane.ERROR_MESSAGE); 
+    		} 
+    		else if(e instanceof IOException) {
 	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
 	    		e.printStackTrace();
 	    		
@@ -357,6 +370,9 @@ public class CloudClient{
     }
   }
   
+  /*
+   * Receives a receipt at the end
+   */
   private static void sendFile(String path, String fileName) throws IOException, InterruptedException, SecurityException{
 	file= new File(path+fileName);
     if(fileSend!=null)
