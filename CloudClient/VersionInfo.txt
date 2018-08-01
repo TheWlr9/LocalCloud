@@ -1,4 +1,7 @@
  /**
+  * _1.8.2_
+  *     ~Asks the user if they want to delete the file from the cloud, after downloading it.
+  *
   * _1.7.2_
   *     ~Added the timeout feature when downloading files as well!
   * 
