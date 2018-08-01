@@ -3,7 +3,11 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.7.2
+ * @version 1.8.2
+ *
+ * _1.8.2_
+ *		~Now asks the user if they want to delete the file off of the cloud after
+ * 			downloading the file from the cloud.
  * 
  * _1.7.2_
  * 		~Added the timeout feature to the file download as well!
@@ -38,11 +42,10 @@ import javax.swing.JOptionPane;
 import graphics.WindowedGraphics;
 
 public class CloudClient{
-	final static private String VERSION= "1.7.2";
+	final static private String VERSION= "1.8.2";
 	
   final static private int PORT= 42843;
   final static private String ADDRESS= "192.168.1.101";
-  final static private String FILE_PATH= "docs"+File.separator;
   final static private int SLEEP= 250;
   
   final static private int TIMEOUT= 3000;
@@ -55,6 +58,7 @@ public class CloudClient{
   final static private String FILES_REQ= "getFiles";
   final static private String UPLOAD= "uploadFile";
   final static private String DOWNLOAD= "downloadFile";
+  final static private String DELETE= "delete";
   final static private String SHUTDOWN= "logoff";
   
   private static boolean escaping;
@@ -212,6 +216,10 @@ public class CloudClient{
                   receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], fileChooser.getDirectory(), fileChooser.getFile());
                   
                   download= true;
+			
+		  //Ask to see whether the user wants to delete the file from the cloud now
+		  if(JOptionPane.showConfirmDialog(myWindow.getFrame(), "Would you like to remove the file from the cloud?", "Remove file?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)==JOptionPane.YES_OPTION)
+                	  delete(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                   
                   //Get the new number of files
                   stringOutStream.println(NUM_FILES_REQ);
@@ -461,6 +469,14 @@ public class CloudClient{
     stringOutStream.flush();
     
     System.out.println("Download complete!");
+  }
+	
+  public static void delete(String file){
+	  stringOutStream.println(DELETE);
+	  stringOutStream.flush();
+	  
+	  stringOutStream.println(file); //Send the filename over
+	  stringOutStream.flush();
   }
   
   public static long maxPing() throws IOException, InterruptedException {
