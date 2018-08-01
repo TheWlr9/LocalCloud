@@ -2,7 +2,7 @@
 
 PROJECT TITLE: Cloud Server Application
 PURPOSE OF PROJECT: To facilitate the transfer of files between computers within the house.
-VERSION or DATE: 1.2.7/July 11 2018
+VERSION or DATE: 1.3.7/July 31 2018
 HOW TO START THIS PROJECT: java ./CloudServer
                             OR
                            cloudServer.sh start
