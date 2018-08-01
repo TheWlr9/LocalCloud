@@ -2,7 +2,7 @@
 SERVICE_NAME=cloudServer
 PATH_TO_DIR=/home/pi/JavaPrograms/CloudServerApplication
 PATH_TO_CLASS=/home/pi/JavaPrograms/CloudServerApplication/CloudServer.class
-PATH_TO_OUT=/home/pi/JavaPrograms/CloudServerApplication/cloudServer.out
+PATH_TO_OUT=/home/pi/JavaPrograms/CloudServerApplication/CloudServer.out
 PID_PATH_NAME=/tmp/cloudServer-pid
 #I need to remember the PID so the system can send the termination signal to it properly.
 case $1 in
