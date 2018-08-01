@@ -3,7 +3,7 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.2.7/July 11 2018
+ * @version 1.3.7/July 31 2018
  */
 public class CloudServer
 {
@@ -69,6 +69,7 @@ final class ServerThread extends Thread{
     final private static String FILES_REQ= "getFiles";
     final private static String UPLOAD= "uploadFile";
     final private static String DOWNLOAD= "downloadFile";
+    final private static String DELETE= "delete";
     final private static String SHUTDOWN= "logoff";
     
     ServerThread(Socket s){
@@ -172,6 +173,15 @@ final class ServerThread extends Thread{
                     
                     sendFile();
                 }
+                /**
+                 * @param Filename The name of the file to be deleted
+                 * Deletes the file from this database
+                 */
+                else if(line.equals(DELETE)){
+                    file= new File(FILE_PATH+stringInStream.readLine()); //Read in file parameter
+                    if(file!=null)
+                        file.delete(); //Delete the file
+                }
                 else if(line.equals(SHUTDOWN)){
                     close= true;
                     System.out.println("Graceful logoff attempt");
@@ -242,12 +252,8 @@ final class ServerThread extends Thread{
         
         outStream.flush();
         
-        if(stringInStream.readLine().equals(SUCCESS_MSG)){
+        if(stringInStream.readLine().equals(SUCCESS_MSG))
             System.out.println("Success!");
-            
-            //Delete the file now
-            file.delete();
-        }
         else
             close= true;
     }
