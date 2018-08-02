@@ -4,9 +4,9 @@
  * @author William Leonardo Ritchie
  * 
  * @version 1.8.2
- *
+ * 
  * _1.8.2_
- *		~Now asks the user if they want to delete the file off of the cloud after
+ * 		~Now asks the user if they want to delete the file off of the cloud after
  * 			downloading the file from the cloud.
  * 
  * _1.7.2_
@@ -32,20 +32,12 @@
  */
 import java.io.*;
 import java.net.*;
-import java.awt.Font;
-import java.awt.Color;	
-import java.awt.FileDialog;
-import java.awt.Toolkit;
-import java.awt.Dimension;
-import javax.swing.JOptionPane;
 
-import graphics.WindowedGraphics;
+import graphics.StrmClientUI;
 
-public class CloudClient{
-	final static private String VERSION= "1.8.2";
-	
+public class StrmClientBE{
   final static private int PORT= 42843;
-  final static private String ADDRESS= "192.168.1.101";
+  final static private String ADDRESS= "24.79.241.156";
   final static private int SLEEP= 250;
   
   final static private int TIMEOUT= 3000;
@@ -61,7 +53,6 @@ public class CloudClient{
   final static private String DELETE= "delete";
   final static private String SHUTDOWN= "logoff";
   
-  private static boolean escaping;
   private static long maxPingRecorded;
   private static int bufferSize;
   private static int pageNo;
@@ -80,62 +71,19 @@ public class CloudClient{
   private static FileInputStream fileSend= null;
   private static FileOutputStream fileReceive= null;
   
-  final private static Dimension SCREEN_SIZE= Toolkit.getDefaultToolkit().getScreenSize();
-  final private static double SCREEN_WIDTH= SCREEN_SIZE.getWidth();
-  final private static double SCREEN_HEIGHT= SCREEN_SIZE.getHeight();
+  private static StrmClientUI graphics;
   
-  private static WindowedGraphics myWindow;
-  final private static String TITLE= "Will's Cloud";
-  private static int width= (int)(SCREEN_WIDTH/2);//1024;
-  private static int height= (int)(3*SCREEN_HEIGHT/4);//768;
-  
-  private static FileDialog fileChooser;
-  
-  final private static Font FILES_FONT= new Font("Arial Black",Font.PLAIN,width/64);
-  final private static int LEFT_FILES= width/10;
-  final private static int TEXT_HEIGHT= height/38;
-  final private static int FILES_BOX_X= width/3;
-  final private static int FILES_BOX_Y= height/4;
-  final private static int FILES_BOX_WIDTH= width/2;
-  final private static double FILES_BOX_SPACING_MULTIPLIER= 1.5;
-  
-  final private static Font MSG_FONT= new Font("Arial Black", Font.BOLD, width/20);
-  final private static int MSG_X= FILES_BOX_X;
-  final private static int MSG_Y= height/6;
-  final private static int MSG_WIDTH= FILES_BOX_WIDTH;
-  final private static int MSG_HEIGHT= height/10;
-  
-  final private static Font BUTTON_FONT= new Font("Arial Black",Font.ITALIC,width/20);
-  final private static int BUTTON_X= 3*width/4;
-  final private static int BUTTON_Y= 9*height/10;
-  final private static int BUTTON_WIDTH= width/5;
-  final private static int BUTTON_HEIGHT= width/10;
+  private static boolean escaping;
   
   
-  final private static int LOADING_X= MSG_X;
-  final private static int LOADING_Y= MSG_Y/2;
-  final private static int LOADING_WIDTH= width/2;
-  final private static int LOADING_LEFT= LOADING_X-LOADING_WIDTH/2;
-  final private static int LOADING_RIGHT= LOADING_X+LOADING_WIDTH/2;
-  final private static int LOADING_HEIGHT= MSG_HEIGHT/2;
-  
-  final private static int PAGE_L_X= width/2-40;
-  final private static int PAGE_R_X= width/2+40;
-  final private static int PAGE_Y= height-50;
-  final private static int PAGE_BUTTON_WIDTH= 60;
-  final private static int PAGE_BUTTON_HEIGHT= 30;
   
   //FLAGS
   private static boolean setupError;
   
   public static void main(String[] args){
 	  setupError= false;
-	  
-    myWindow= new WindowedGraphics(width,height);
-    fileChooser= new FileDialog(myWindow.getFrame());
-    fileChooser.setMultipleMode(false); //To be changed at a later date?
-    
-    myWindow.setTitle(TITLE+" "+VERSION);
+	  escaping= false;
+	  graphics= new StrmClientUI(MAX_FILES_PER_PAGE);
     
     try{
       serverSocket= new Socket(ADDRESS, PORT);
@@ -155,15 +103,13 @@ public class CloudClient{
       System.err.println("ERROR: CloudClient.main: Error in setting up streams");
       e.printStackTrace();
       
-      JOptionPane.showMessageDialog(myWindow.getFrame(), "Unable to access Raspberry Pi", "Error", JOptionPane.ERROR_MESSAGE);
+      graphics.popupError("Unable to access Raspberry Pi", "Error");
       
       setupError= true;
     }
     
     try{
     	pageNo= 1;
-    	
-    	escaping= false;
     	
       //HERE WAS THE NETWORKING STUFF
       stringOutStream.println(serverSocket.getLocalAddress()); //Must send over the IP address first
@@ -185,40 +131,38 @@ public class CloudClient{
       
       updateCloudFilesNames();
       
-      display(pageNo); //Starting page #
+      graphics.display(pageNo, numOfPages, cloudFilesNames); //Starting page #
       
       //Start the main activity "listener"
-      while(myWindow.exists()){
+      while(graphics.exists()){
         
-        if(myWindow.isMousePressed()){
-          double mouseX= myWindow.mouseX();
-          double mouseY= myWindow.mouseY();
+        if(graphics.isMousePressed()){
+          double mouseX= graphics.mouseX();
+          double mouseY= graphics.mouseY();
           boolean download= false;
           boolean upload= false;
-          if(mouseX>(FILES_BOX_X-FILES_BOX_WIDTH/2) && mouseX<(FILES_BOX_X+FILES_BOX_WIDTH/2)){
+          if(mouseX>(StrmClientUI.FILES_BOX_X-StrmClientUI.FILES_BOX_WIDTH/2) && mouseX<(StrmClientUI.FILES_BOX_X+StrmClientUI.FILES_BOX_WIDTH/2)){
             for(int i= 0; i<MAX_FILES_PER_PAGE; i++){
-              if(mouseY>(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER-TEXT_HEIGHT/2) && mouseY<(FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER+TEXT_HEIGHT/2)){
+              if(mouseY>(StrmClientUI.FILES_BOX_Y+i*StrmClientUI.TEXT_HEIGHT*StrmClientUI.FILES_BOX_SPACING_MULTIPLIER-StrmClientUI.TEXT_HEIGHT/2) && mouseY<(StrmClientUI.FILES_BOX_Y+i*StrmClientUI.TEXT_HEIGHT*StrmClientUI.FILES_BOX_SPACING_MULTIPLIER+StrmClientUI.TEXT_HEIGHT/2)){
                 System.out.println("File chosen: "+cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 
                 Thread.sleep(200);
                 
-                fileChooser.setTitle("Choose a location to save the file to");
-                fileChooser.setFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
-                fileChooser.setMode(FileDialog.SAVE);
-                fileChooser.setVisible(true);
+                graphics.saveFilePopup(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
+                String savingName= graphics.getSavingName();
                 
-                if(fileChooser.getFile()!=null){
-                  load();
+                if(savingName!=null){
+                  graphics.load();
                   
                   //Send download request to the server
                   stringOutStream.println(DOWNLOAD); //CONSTANT
                   
-                  receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], fileChooser.getDirectory(), fileChooser.getFile());
+                  receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], graphics.getSavingDirectory(), savingName);
                   
                   download= true;
-			
-		  //Ask to see whether the user wants to delete the file from the cloud now
-		  if(JOptionPane.showConfirmDialog(myWindow.getFrame(), "Would you like to remove the file from the cloud?", "Remove file?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)==JOptionPane.YES_OPTION)
+                  
+                  //Ask to see whether the user wants to delete the file from the cloud now
+                  if(graphics.popupDeleteFileConfirmation())
                 	  delete(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                   
                   //Get the new number of files
@@ -228,33 +172,31 @@ public class CloudClient{
                   updateCloudFilesNames();
                   if(cloudFilesNames.length%MAX_FILES_PER_PAGE==0)
                 	  pageNo--;
-                  display(pageNo);
+                  graphics.display(pageNo, numOfPages, cloudFilesNames);
                   
-                  clearMsg();
+                  graphics.clearMsg();
                 }
                 
                 //Thread.sleep(200);
               }
             }
           }
-          if(!download && mouseX>BUTTON_X-BUTTON_WIDTH/2 && mouseX<BUTTON_X+BUTTON_WIDTH/2 &&
-          mouseY>BUTTON_Y-BUTTON_HEIGHT/2 && mouseY<BUTTON_Y+BUTTON_HEIGHT/2){
+          if(!download && mouseX>StrmClientUI.BUTTON_X-StrmClientUI.BUTTON_WIDTH/2 && mouseX<StrmClientUI.BUTTON_X+StrmClientUI.BUTTON_WIDTH/2 &&
+          mouseY>StrmClientUI.BUTTON_Y-StrmClientUI.BUTTON_HEIGHT/2 && mouseY<StrmClientUI.BUTTON_Y+StrmClientUI.BUTTON_HEIGHT/2){
             Thread.sleep(200);
             
-            fileChooser.setTitle("Select a file to upload");
-            fileChooser.setMode(FileDialog.LOAD);
-            fileChooser.setVisible(true);
+            graphics.uploadFilePopup();
             
-            if(fileChooser.getFile()!=null){
-              System.out.println("File chosen: "+fileChooser.getDirectory()+fileChooser.getFile());
+            if(graphics.getUploadingName()!=null){
+              System.out.println("File chosen: "+graphics.getUploadingDirectory()+graphics.getUploadingName());
               
-              load();
+              graphics.load();
               
               maxPingRecorded= maxPing();
               
               stringOutStream.println(UPLOAD); //CONSTANT
               
-              sendFile(fileChooser.getDirectory(), fileChooser.getFile());
+              sendFile(graphics.getUploadingDirectory(), graphics.getUploadingName());
               
               if(!escaping) {
             	  upload= true;
@@ -267,32 +209,32 @@ public class CloudClient{
             	  cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
             	  
             	  updateCloudFilesNames();
-            	  display(pageNo);
+            	  graphics.display(pageNo, numOfPages, cloudFilesNames);
             	  
-            	  clearMsg();
+            	  graphics.clearMsg();
               }
             }
           }
-          if(!download && !upload && mouseX>PAGE_L_X-PAGE_BUTTON_WIDTH/2 && mouseX<PAGE_R_X+PAGE_BUTTON_WIDTH/2
-        		  && mouseY>PAGE_Y-PAGE_BUTTON_HEIGHT/2 && mouseY<PAGE_Y+PAGE_BUTTON_HEIGHT/2) {
+          if(!download && !upload && mouseX>StrmClientUI.PAGE_L_X-StrmClientUI.PAGE_BUTTON_WIDTH/2 && mouseX<StrmClientUI.PAGE_R_X+StrmClientUI.PAGE_BUTTON_WIDTH/2
+        		  && mouseY>StrmClientUI.PAGE_Y-StrmClientUI.PAGE_BUTTON_HEIGHT/2 && mouseY<StrmClientUI.PAGE_Y+StrmClientUI.PAGE_BUTTON_HEIGHT/2) {
         	  Thread.sleep(200);
         	  
-        	  if(mouseX<PAGE_L_X+PAGE_BUTTON_WIDTH/2) {
+        	  if(mouseX<StrmClientUI.PAGE_L_X+StrmClientUI.PAGE_BUTTON_WIDTH/2) {
         		  //The prev button has been hit
         		  
         		  if(pageNo>1) {
         			  pageNo--;
         			  
-        			  display(pageNo);
+        			  graphics.display(pageNo, numOfPages, cloudFilesNames);
         		  }
         	  }
-        	  else if(mouseX>PAGE_R_X-PAGE_BUTTON_WIDTH/2){
+        	  else if(mouseX>StrmClientUI.PAGE_R_X-StrmClientUI.PAGE_BUTTON_WIDTH/2){
         		  //The next button has been hit
         		  
         		  if(pageNo<numOfPages) {
         			  pageNo++;
         			  
-        			  display(pageNo);
+        			  graphics.display(pageNo, numOfPages, cloudFilesNames);
         		  }
         	  }
           }
@@ -314,29 +256,29 @@ public class CloudClient{
     			System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised"); 
     			e.printStackTrace(); 
 
-    			JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again!", "Error: Packet loss",JOptionPane.ERROR_MESSAGE); 
+    			graphics.popupError("Please try again!", "Error: Packet loss");	
     		} 
     		else if(e instanceof IOException) {
 	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
 	    		e.printStackTrace();
 	    		
-	    		JOptionPane.showMessageDialog(myWindow.getFrame(), "Packet loss. Please try again", "Error", JOptionPane.ERROR_MESSAGE);
+	    		graphics.popupError("Packet loss. Please try again", "Error");
 	    	}
 	    	else if(e instanceof NullPointerException) {
 	    	      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
 	    	      e.printStackTrace();
 	    	      
-	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "File does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+	    	      graphics.popupError("File does not exist", "Error");
 	    	}
 	    	else if(e instanceof InterruptedException) {
 	    	      System.err.println("ERROR: ClientSocket: main: Interrupt encountered, cannot sleep");
 	    	      
-	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "Rushed service; failsafe triggered", "Error", JOptionPane.ERROR_MESSAGE);
+	    	      graphics.popupError("Ruched service; failsafe triggered", "Error");
 	    	}
 	    	else if(e instanceof SecurityException) {
 	    	      System.err.println("ERROR: ClientSocket: main: Client attempting to access unauthorized files");
 	    	      
-	    	      JOptionPane.showMessageDialog(myWindow.getFrame(), "You are unauthorized to access those files", "Error", JOptionPane.ERROR_MESSAGE);
+	    	      graphics.popupError("You are unauthorized to access those files", "Error");
 	    	}
 	    	else {
 	    		e.printStackTrace();
@@ -344,8 +286,8 @@ public class CloudClient{
     	}
     }
     finally{
-    	if(myWindow.exists()) {
-    		myWindow.close();
+    	if(graphics.exists()) {
+    		graphics.close();
     	}
     	
       System.out.println("\nClosing connection...");
@@ -390,8 +332,8 @@ public class CloudClient{
     System.out.println("Uploading file...");
     
     //Draw the empty loading buffer
-	myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);
-	
+    graphics.setupLoadingBar();
+    
 	long waitTime= maxPingRecorded/2;
     int bytesRead= 0;
     int totalBytesRead= 0;
@@ -412,8 +354,7 @@ public class CloudClient{
       
       totalBytesRead+= bytesRead;
       
-      myWindow.setPenColour(WindowedGraphics.BLUE);
-      myWindow.filledRectangle(LOADING_LEFT+((double)(totalBytesRead)/(double)(file.length()))*(LOADING_RIGHT-LOADING_LEFT)/2, LOADING_Y, (((double)(totalBytesRead)/(double)(file.length()))*(LOADING_RIGHT-LOADING_LEFT))/2, (LOADING_HEIGHT)/2);
+      graphics.updateLoadingBar((double)(totalBytesRead), (double)(file.length()));
     }
     
     outStream.flush();
@@ -421,11 +362,11 @@ public class CloudClient{
     if(stringInStream.readLine().equals(SUCCESS_MSG))
     	System.out.println("Success!");
     else {
-    	JOptionPane.showMessageDialog(myWindow.getFrame(), "Please try again", "Error: Packet loss", JOptionPane.ERROR_MESSAGE);
+      graphics.popupError("Please try again", "Error: Packet loss");
     	
     	escaping= true;
     	
-    	myWindow.close();
+    	graphics.close();
     }
     
     //Maybe delete the file now?
@@ -440,7 +381,7 @@ public class CloudClient{
     System.out.println("Downloading file...");
     
     //Draw the empty loading buffer
-    myWindow.rectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2, (LOADING_HEIGHT)/2);
+    graphics.setupLoadingBar();
     
     serverSocket.setSoTimeout(TIMEOUT);
     
@@ -458,8 +399,7 @@ public class CloudClient{
       totalBytesRead+= bytesRead;
       
       //Fill the loading buffer
-      myWindow.setPenColour(WindowedGraphics.BLUE);
-      myWindow.filledRectangle(LOADING_LEFT+((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT)/2, LOADING_Y, (((double)(totalBytesRead)/(double)(sizeOfFile))*(LOADING_RIGHT-LOADING_LEFT))/2, (LOADING_HEIGHT)/2);
+      graphics.updateLoadingBar((double)(totalBytesRead), (double)(sizeOfFile));
     }
     
     serverSocket.setSoTimeout(0);
@@ -470,8 +410,8 @@ public class CloudClient{
     
     System.out.println("Download complete!");
   }
-	
-  public static void delete(String file){
+  
+  public static void delete(String file) {
 	  stringOutStream.println(DELETE);
 	  stringOutStream.flush();
 	  
@@ -506,16 +446,6 @@ public class CloudClient{
 	  return (long)(System.currentTimeMillis()-startTime);
   }
   
-  private static void display(int page){
-    myWindow.clear();
-    
-    displayCloudFilesNames(page);
-    
-    displayUploadButton();
-    
-    displayPageSelectionUI();
-  }
-  
   private static void updateCloudFilesNames() throws IOException{
     stringOutStream.println(FILES_REQ);
     stringOutStream.flush();
@@ -525,53 +455,5 @@ public class CloudClient{
     
     numOfPages= (int)Math.ceil((double)cloudFilesNames.length/(double)MAX_FILES_PER_PAGE);
   }
-  private static void displayCloudFilesNames(int page){
-    myWindow.setFont(FILES_FONT);
-    //Draw the files uploaded
-    for(int i= 0; i<cloudFilesNames.length-((pageNo-1)*MAX_FILES_PER_PAGE) && i<MAX_FILES_PER_PAGE; i++){
-      myWindow.setPenColour(WindowedGraphics.BLUE);
-      myWindow.filledRectangle(FILES_BOX_X,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,(FILES_BOX_WIDTH)/2,(TEXT_HEIGHT)/2);
-      myWindow.setPenColour(WindowedGraphics.WHITE);
-      myWindow.textLeft(LEFT_FILES,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
-    }
-  }
   
-  private static void displayUploadButton(){
-    //Draw the upload button
-    myWindow.setPenColour(WindowedGraphics.BLACK);
-    myWindow.rectangle(BUTTON_X,BUTTON_Y,(BUTTON_WIDTH)/2,(BUTTON_HEIGHT)/2);
-    myWindow.setFont(BUTTON_FONT);
-    myWindow.text(BUTTON_X,BUTTON_Y,"Upload");
-  }
-  
-  private static void displayPageSelectionUI() {
-	  myWindow.setFont();
-	  
-	  //Draw the page control management
-	  myWindow.setPenColour(WindowedGraphics.BLACK);
-	  
-	  myWindow.text(width/2, height-100, "Displaying page "+pageNo+" of "+(numOfPages));
-	  
-	  myWindow.text(PAGE_R_X, PAGE_Y, "NEXT");
-	  myWindow.rectangle(PAGE_R_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
-	  
-	  myWindow.text(PAGE_L_X, PAGE_Y, "PREV");
-	  myWindow.rectangle(PAGE_L_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
-  }
-  
-  private static void load(){
-    //LOADING SCREEN
-    myWindow.setPenColour(WindowedGraphics.BLACK);
-    myWindow.setFont(MSG_FONT);
-    myWindow.textLeft(LEFT_FILES,MSG_Y,"Loading...");
-  }
-  
-  private static void clearMsg(){
-    Color prevColour= myWindow.getPenColour();
-    myWindow.setPenColour(WindowedGraphics.WHITE);
-    
-    myWindow.filledRectangle(MSG_X,MSG_Y,(MSG_WIDTH)/2,(MSG_HEIGHT)/2);
-    
-    myWindow.setPenColour(prevColour);
-  }
 }
