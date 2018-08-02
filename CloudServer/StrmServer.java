@@ -5,7 +5,7 @@ import java.io.*;
  * @author William Ritchie
  * @version 1.3.7/July 31 2018
  */
-public class CloudServer
+public class StrmServer
 {
     public final static int BUFFER_SIZE= 4096;
     public final static int MAX_FILES_UPLOADED= 5;
@@ -14,9 +14,9 @@ public class CloudServer
     public final static int TIMEOUT= 3000;
 
     /**
-     * Constructor for objects of class CloudServer
+     * Constructor for objects of class StrmServer
      */
-    public CloudServer()
+    public StrmServer()
     {
         
     }
@@ -51,7 +51,7 @@ final class ServerThread extends Thread{
     InputStream inStream;
     BufferedReader stringInStream;
     PrintWriter stringOutStream;
-    byte[] byteArray= new byte[CloudServer.BUFFER_SIZE]; //BUFFER_SIZE should be the same size as the client's BUFFER_SIZE
+    byte[] byteArray= new byte[StrmServer.BUFFER_SIZE]; //BUFFER_SIZE should be the same size as the client's BUFFER_SIZE
     boolean close;
     private File file= null;
     FileOutputStream fileOutStream= null;
@@ -106,7 +106,7 @@ final class ServerThread extends Thread{
                  * @return The sent buffer
                  */
                 if(line.equals(PING)){
-                    byte[] dummy= new byte[CloudServer.BUFFER_SIZE];
+                    byte[] dummy= new byte[StrmServer.BUFFER_SIZE];
                     inStream.read(dummy);
                     outStream.write(dummy);
                     outStream.flush();
@@ -116,7 +116,7 @@ final class ServerThread extends Thread{
                  */
                 else if(line.equals(BUF_SIZE_REQ)){
                     System.out.println("Transmitting buffer size");
-                    stringOutStream.println(CloudServer.BUFFER_SIZE);
+                    stringOutStream.println(StrmServer.BUFFER_SIZE);
                     stringOutStream.flush();
                 }
                 /**
@@ -245,7 +245,7 @@ final class ServerThread extends Thread{
         stringOutStream.println(file.length());
         stringOutStream.flush();
         
-        Thread.sleep(CloudServer.SLEEP);
+        Thread.sleep(StrmServer.SLEEP);
         
         while((bytesRead= fileInStream.read(byteArray))!=-1)
             outStream.write(byteArray,0,bytesRead);
@@ -264,7 +264,7 @@ final class ServerThread extends Thread{
         long totalBytesRead= 0;
         int bytesRead= 0;
         
-        s.setSoTimeout(CloudServer.TIMEOUT); //Sets the timeout feature for the socket
+        s.setSoTimeout(StrmServer.TIMEOUT); //Sets the timeout feature for the socket
         
         while(totalBytesRead<sizeOfFile){
             bytesRead= inStream.read(byteArray);
