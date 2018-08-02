@@ -1,6 +1,6 @@
 Instructions:
   Steps:
-    1. Must have CloudServer running on a machine (Host) with either a static IP address, or something that can pass as a static IP
+    1. Must have StrmServer running on a machine (Host) with either a static IP address, or something that can pass as a static IP
        address.
     2. Then, you must edit the code in StrmClientBE.java where the value of ADDRESS is that of the Host (as a String).
     3. Then, on any machine (Client) that can access the same WLAN that the Host is connected to, or the internet*, run StrmClientBE whenever you want to use 
