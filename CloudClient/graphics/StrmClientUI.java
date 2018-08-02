@@ -17,7 +17,7 @@ public class StrmClientUI {
   final private static double SCREEN_HEIGHT= SCREEN_SIZE.getHeight();
 
   private static WindowedGraphics myWindow;
-  final private static String TITLE= "Will's Cloud";
+  final private static String TITLE= "Strm";
   private static int width= (int)(SCREEN_WIDTH/2);//1024;
   private static int height= (int)(3*SCREEN_HEIGHT/4);//768;
   private int maxFilesPerPage;
