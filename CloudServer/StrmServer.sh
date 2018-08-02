@@ -1,6 +1,7 @@
 #!/bin/sh
 SERVICE_NAME=strmServer
 PATH_TO_DIR=/home/pi/JavaPrograms/CloudServerApplication
+#PATH_TO_CLASS is unused, just there for reference.
 PATH_TO_CLASS=/home/pi/JavaPrograms/CloudServerApplication/StrmServer.class
 PATH_TO_OUT=/home/pi/JavaPrograms/CloudServerApplication/StrmServer.out
 PID_PATH_NAME=/tmp/strmServer-pid
