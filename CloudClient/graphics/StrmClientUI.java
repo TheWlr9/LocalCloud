@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 
 public class StrmClientUI {
   final static private String VERSION= "1.8.2";
+  final static private String MOTD= "https://www.github.com/TheWlr9/Strm";
 
   final private static Dimension SCREEN_SIZE= Toolkit.getDefaultToolkit().getScreenSize();
   final private static double SCREEN_WIDTH= SCREEN_SIZE.getWidth();
@@ -175,7 +176,7 @@ public class StrmClientUI {
   }
   
   private void displayMOTD() {
-    myWindow.text(width/2, (4.0/5.0)*height, "https://www.github.com/TheWlr9/Personal-Cloud");
+    myWindow.text(width/2, (4.0/5.0)*height, MOTD);
   }
   
   public void setupLoadingBar() {
