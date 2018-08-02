@@ -2,8 +2,8 @@ Instructions:
   Steps:
     1. Must have CloudServer running on a machine (Host) with either a static IP address, or something that can pass as a static IP
        address.
-    2. Then, you must edit the code in CloudClient.java where the value of ADDRESS is that of the Host (as a String).
-    3. Then, on any machine (Client) that can access the same WLAN that the Host is connected to, or the internet*, run CloudClient whenever you want to use 
+    2. Then, you must edit the code in StrmClientBE.java where the value of ADDRESS is that of the Host (as a String).
+    3. Then, on any machine (Client) that can access the same WLAN that the Host is connected to, or the internet*, run StrmClientBE whenever you want to use 
        the cloud.
   Actions:
     - Clicking on the "Upload" button in the bottom right of the Client window, will upload any file you desire to the cloud, as long as 
