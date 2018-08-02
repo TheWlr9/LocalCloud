@@ -39,9 +39,9 @@ public class StrmClientUI {
 
   final private static Font BUTTON_FONT= new Font("Arial Black",Font.ITALIC,width/20);
   final public static int BUTTON_X= 3*width/4;
-  final public static int BUTTON_Y= 9*height/10;
+  final public static int BUTTON_Y= (int)(9.5*height/10);
   final public static int BUTTON_WIDTH= width/5;
-  final public static int BUTTON_HEIGHT= width/10;
+  final public static int BUTTON_HEIGHT= height/10;
 
 
   final private static int LOADING_X= MSG_X;
@@ -53,7 +53,7 @@ public class StrmClientUI {
 
   final public static int PAGE_L_X= width/2-40;
   final public static int PAGE_R_X= width/2+40;
-  final public static int PAGE_Y= height-50;
+  final public static int PAGE_Y= (int)(height*(9.5/10.0));//height-50;
   final public static int PAGE_BUTTON_WIDTH= 60;
   final public static int PAGE_BUTTON_HEIGHT= 30;
 
@@ -166,8 +166,7 @@ public class StrmClientUI {
     //Draw the page control management
     myWindow.setPenColour(WindowedGraphics.BLACK);
 
-    myWindow.text(width/2, height-100, "Displaying page "+page+" of "+(numOfPages));
-
+    myWindow.text(width/2, height*(8.5/10.0), "Displaying page "+page+" of "+(numOfPages));
     myWindow.text(PAGE_R_X, PAGE_Y, "NEXT");
     myWindow.rectangle(PAGE_R_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
 
