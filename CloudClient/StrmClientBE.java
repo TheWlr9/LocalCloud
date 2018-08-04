@@ -40,7 +40,7 @@ import graphics.StrmClientUI;
 
 public class StrmClientBE{
   final static private int PORT= 42843;
-  final static private String ADDRESS= "24.79.241.156";
+  final static private String ADDRESS= "192.168.1.101";
   final static private int SLEEP= 250;
   
   final static private int TIMEOUT= 3000;
