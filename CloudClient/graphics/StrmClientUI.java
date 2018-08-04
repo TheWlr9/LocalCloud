@@ -9,7 +9,7 @@ import java.awt.Toolkit;
 import javax.swing.JOptionPane;
 
 public class StrmClientUI {
-  final static private String VERSION= "1.8.2";
+  final static private String VERSION= "1.9.2";
   final static private String MOTD= "https://www.github.com/TheWlr9/Strm";
 
   final private static Dimension SCREEN_SIZE= Toolkit.getDefaultToolkit().getScreenSize();
@@ -42,7 +42,7 @@ public class StrmClientUI {
   final public static int BUTTON_X= 3*width/4;
   final public static int BUTTON_Y= (int)(9.5*height/10);
   final public static int BUTTON_WIDTH= width/5;
-  final public static int BUTTON_HEIGHT= height/10;
+  final public static int BUTTON_HEIGHT=height/10;
 
 
   final private static int LOADING_X= MSG_X;
@@ -83,6 +83,9 @@ public class StrmClientUI {
    */
   public boolean popupDeleteFileConfirmation() {
     return JOptionPane.showConfirmDialog(myWindow.getFrame(), "Would you like to remove the file from the cloud?", "Remove file?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)==JOptionPane.YES_OPTION;
+  }
+  public boolean popupPacketLossRetry() {
+    return JOptionPane.showConfirmDialog(myWindow.getFrame(), "Would you like to try again?", "Error: Packet loss", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE)==JOptionPane.YES_OPTION;
   }
   
   /**
@@ -168,6 +171,7 @@ public class StrmClientUI {
     myWindow.setPenColour(WindowedGraphics.BLACK);
 
     myWindow.text(width/2, height*(8.5/10.0), "Displaying page "+page+" of "+(numOfPages));
+
     myWindow.text(PAGE_R_X, PAGE_Y, "NEXT");
     myWindow.rectangle(PAGE_R_X, PAGE_Y, (PAGE_BUTTON_WIDTH)/2, (PAGE_BUTTON_HEIGHT)/2);
 
@@ -219,6 +223,15 @@ public class StrmClientUI {
     myWindow.filledRectangle(MSG_X,MSG_Y,(MSG_WIDTH)/2,(MSG_HEIGHT)/2);
     
     myWindow.setPenColour(prevColour);
+  }
+  
+  public void clearLoading() {
+    Color prevColor= myWindow.getPenColour();
+    myWindow.setPenColour(myWindow.WHITE);
+    
+    myWindow.filledRectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2+LOADING_WIDTH/10, (LOADING_HEIGHT)/2+LOADING_HEIGHT/10);
+    
+    myWindow.setPenColour(prevColor);
   }
   
 
