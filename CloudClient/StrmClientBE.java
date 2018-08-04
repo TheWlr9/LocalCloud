@@ -409,7 +409,7 @@ public class StrmClientBE{
     while(totalBytesRead<sizeOfFile){
       bytesRead= inStream.read(byteArray);
       fileReceive.write(byteArray,0,bytesRead);
-      totalBytesRead+= bytesRead-1; //CHANGE!!!
+      totalBytesRead+= bytesRead;
       
       if(totalBytesRead%bufferSize==0 || totalBytesRead==sizeOfFile) {
 	//Send the success message
