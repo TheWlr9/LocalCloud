@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.8.2
+ * @version 1.9.2
+ * 
+ * _1.9.2_
+ * 		~Highly optimized file transfer! Reduced risk of losing data! A safer journey!
  * 
  * _1.8.2_
  * 		~Now asks the user if they want to delete the file off of the cloud after
@@ -150,31 +153,29 @@ public class StrmClientBE{
                 
                 graphics.saveFilePopup(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 String savingName= graphics.getSavingName();
+                String fileToSave= cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))];
+                String savingDirectory= graphics.getSavingDirectory();
                 
                 if(savingName!=null){
-                  graphics.load();
-                  
-                  //Send download request to the server
-                  stringOutStream.println(DOWNLOAD); //CONSTANT
-                  
-                  receiveFile(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))], graphics.getSavingDirectory(), savingName);
-                  
-                  download= true;
-                  
-                  //Ask to see whether the user wants to delete the file from the cloud now
-                  if(graphics.popupDeleteFileConfirmation())
-                	  delete(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
-                  
-                  //Get the new number of files
-                  stringOutStream.println(NUM_FILES_REQ);
-                  stringOutStream.flush();
-                  cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
-                  updateCloudFilesNames();
-                  if(cloudFilesNames.length%MAX_FILES_PER_PAGE==0)
-                	  pageNo--;
-                  graphics.display(pageNo, numOfPages, cloudFilesNames);
-                  
+                  if(download(fileToSave, savingDirectory, savingName)) {
+                    
+                    download= true;
+                    
+                    //Ask to see whether the user wants to delete the file from the cloud now
+                    if(graphics.popupDeleteFileConfirmation())
+                  	  delete(cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
+                    
+                    //Get the new number of files
+                    stringOutStream.println(NUM_FILES_REQ);
+                    stringOutStream.flush();
+                    cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
+                    updateCloudFilesNames();
+                    if(cloudFilesNames.length%MAX_FILES_PER_PAGE==0)
+                  	  pageNo--;
+                    graphics.display(pageNo, numOfPages, cloudFilesNames);
+                  }
                   graphics.clearMsg();
+                  graphics.clearLoading();
                 }
                 
                 //Thread.sleep(200);
@@ -190,13 +191,7 @@ public class StrmClientBE{
             if(graphics.getUploadingName()!=null){
               System.out.println("File chosen: "+graphics.getUploadingDirectory()+graphics.getUploadingName());
               
-              graphics.load();
-              
-              maxPingRecorded= maxPing();
-              
-              stringOutStream.println(UPLOAD); //CONSTANT
-              
-              sendFile(graphics.getUploadingDirectory(), graphics.getUploadingName());
+              upload(graphics.getUploadingDirectory(), graphics.getUploadingName());
               
               if(!escaping) {
             	  upload= true;
@@ -320,6 +315,17 @@ public class StrmClientBE{
     }
   }
   
+  
+  private static void upload(String path, String filename) throws IOException, InterruptedException {
+    graphics.load();
+    
+    maxPingRecorded= maxPing();
+    
+    stringOutStream.println(UPLOAD); //CONSTANT
+    stringOutStream.flush();
+    
+    sendFile(path, filename);
+  }
   /*
    * Receives a receipt at the end
    */
@@ -338,6 +344,8 @@ public class StrmClientBE{
     int bytesRead= 0;
     int totalBytesRead= 0;
     
+    boolean failed= false;
+    
     //Need to send the file name to the server
     stringOutStream.println(fileName);
     stringOutStream.flush();
@@ -352,6 +360,10 @@ public class StrmClientBE{
     while((bytesRead= fileSend.read(byteArray))!=-1) {
       outStream.write(byteArray,0,bytesRead);
       
+      if(!stringInStream.readLine().equals(SUCCESS_MSG)) {
+	failed= true;
+	break;
+      }
       totalBytesRead+= bytesRead;
       
       graphics.updateLoadingBar((double)(totalBytesRead), (double)(file.length()));
@@ -359,19 +371,20 @@ public class StrmClientBE{
     
     outStream.flush();
     
-    if(stringInStream.readLine().equals(SUCCESS_MSG))
+    if(!failed)
     	System.out.println("Success!");
     else {
-      graphics.popupError("Please try again", "Error: Packet loss");
-    	
-    	escaping= true;
-    	
-    	graphics.close();
+      System.err.println("Error, packet loss.");
+      
+      fileSend.close();
+      
+      if(graphics.popupPacketLossRetry())
+	upload(path, fileName);
     }
     
     //Maybe delete the file now?
   }
-  private static void receiveFile(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException{
+  private static void receiveFile(String remoteFileName, String localPath, String localFileName) throws IOException, SecurityException, InterruptedException, SocketTimeoutException{
     file= new File(localPath+localFileName);
     if(fileReceive!=null)
       fileReceive.close();
@@ -396,7 +409,13 @@ public class StrmClientBE{
     while(totalBytesRead<sizeOfFile){
       bytesRead= inStream.read(byteArray);
       fileReceive.write(byteArray,0,bytesRead);
-      totalBytesRead+= bytesRead;
+      totalBytesRead+= bytesRead-1; //CHANGE!!!
+      
+      if(totalBytesRead%bufferSize==0 || totalBytesRead==sizeOfFile) {
+	//Send the success message
+	stringOutStream.println(SUCCESS_MSG);
+	stringOutStream.flush();
+      }
       
       //Fill the loading buffer
       graphics.updateLoadingBar((double)(totalBytesRead), (double)(sizeOfFile));
@@ -404,11 +423,37 @@ public class StrmClientBE{
     
     serverSocket.setSoTimeout(0);
     
-    //Send receipt
-    stringOutStream.println(SUCCESS_MSG);
-    stringOutStream.flush();
-    
     System.out.println("Download complete!");
+  }
+  private static boolean download(String remoteFileName, String localPath, String localFileName) throws SecurityException, IOException, InterruptedException {
+    graphics.load();
+    
+    //Send download request to the server
+    stringOutStream.println(DOWNLOAD); //CONSTANT
+    
+    try {
+      receiveFile(remoteFileName, localPath, localFileName);
+      return true; //Return successful
+    }
+    catch(SocketTimeoutException ste) {
+      System.err.println("Error, packet loss.");
+      
+      serverSocket.setSoTimeout(0); //Reset the socket timeout
+      
+      stringOutStream.println(ERROR_MSG);
+      stringOutStream.flush();
+      
+      if(fileReceive!=null)
+	fileReceive.close();
+      file.delete();
+      
+      if(graphics.popupPacketLossRetry()) {
+	graphics.clearLoading();
+	return download(remoteFileName, localPath, localFileName);
+      }
+      else
+	return false; //Return unsuccessful
+    }
   }
   
   public static void delete(String file) {
@@ -456,4 +501,3 @@ public class StrmClientBE{
     numOfPages= (int)Math.ceil((double)cloudFilesNames.length/(double)MAX_FILES_PER_PAGE);
   }
   
-}
