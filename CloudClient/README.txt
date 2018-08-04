@@ -12,7 +12,9 @@ Instructions:
       downloaded).
     - Clicking on the "next" and "prev" buttons at the bottom will navigate through the pages of files you have stored on the cloud.
 
-CloudClient v.1.7.1 or later, compatible with CloudServer v1.2.5 or later.
+StrmClient v.1.9.2 or later, compatible with StrmServer v1.4.7 or later.
+
+CloudClient v.1.7.1 to v.1.8.2, compatible with CloudServer v1.2.5 to v.1.3.7.
 
 CloudClient v.1.6.1, compatible with CloudServer v.1.1.5.
 
