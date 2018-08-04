@@ -12,7 +12,7 @@ case $1 in
         if [ ! -f $PID_PATH_NAME ]; then
 	    ROOTDIR=$(pwd)
             cd $PATH_TO_DIR
-            nohup java StrmServer > $PATH_TO_OUT 2>&1 &
+            sudo nohup java StrmServer > $PATH_TO_OUT 2>&1 &
             cd $ROOTDIR
             echo $! > $PID_PATH_NAME
             echo "$SERVICE_NAME started ..."
@@ -41,7 +41,7 @@ case $1 in
             echo "$SERVICE_NAME starting ..."
             ROOTDIR=$(pwd)
 	    cd $PATH_TO_DIR
-            nohup java StrmServer > $PATH_TO_OUT 2>&1 &
+            sudo nohup java StrmServer > $PATH_TO_OUT 2>&1 &
             cd $ROOTDIR
             echo $! > $PID_PATH_NAME
             echo "$SERVICE_NAME started ..."
