@@ -3,10 +3,11 @@ import java.io.*;
 
 /**
  * @author William Ritchie
- * @version 1.3.7/July 31 2018
+ * @version 1.4.7/August 3 2018
  */
 public class StrmServer
 {
+    public final static int PORT= 42843;
     public final static int BUFFER_SIZE= 4096;
     public final static int MAX_FILES_UPLOADED= 5;
     public final static int MAX_FILES_PER_PAGE= 10;
@@ -25,12 +26,12 @@ public class StrmServer
         Socket clientSocket= null;
         ServerSocket serverSocket= null;
         try{
-            serverSocket= new ServerSocket(port);
+            serverSocket= new ServerSocket(PORT);
         }
         catch(IOException e){
             System.err.println("ERROR: main: Error in initializing sockets");
         }
-
+        
         while(true){
             try{
                 clientSocket= serverSocket.accept();
@@ -75,7 +76,7 @@ final class ServerThread extends Thread{
     ServerThread(Socket s){
         this.s= s;
         
-        this.s.setPerformancePreferences(0,0,1); //Prioritizs bandwidth
+        this.s.setPerformancePreferences(0,0,1); //Prioritizes bandwidth
     }
     
     public void run(){
@@ -141,27 +142,13 @@ final class ServerThread extends Thread{
                  * @param Requires the file name
                  * @param Requires the size of the file being uploaded in bytes
                  * @return A confirmation string once completed
-                 *
-                 * @throws SocketTimeoutException if there is packet loss.
-                 *
-                 * Sends a receipt after operation.
                  */
                 else if(line.equals(UPLOAD)){
-                    file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
-                    
-                    file.createNewFile();
-                    
-                    if(fileOutStream!=null)
-                        fileOutStream.close();
-                    fileOutStream= new FileOutputStream(file);
-                    
-                    receiveFile();
+                    download();
                 }
                 /**
                  * @param Requires the file name
                  * Sends the size of the file in bytes before sending the file.
-                 *
-                 * Must receive a receipt at the end of the operation.
                  */
                 else if(line.equals(DOWNLOAD)){
                     file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
@@ -178,7 +165,7 @@ final class ServerThread extends Thread{
                  * Deletes the file from this database
                  */
                 else if(line.equals(DELETE)){
-                    file= new File(FILE_PATH+stringInStream.readLine()); //Read in file parameter
+                    file= new File(FILE_PATH+stringInStream.readLine()); //Read in file name parameter
                     if(file!=null)
                         file.delete(); //Delete the file
                 }
@@ -237,9 +224,36 @@ final class ServerThread extends Thread{
         return files.length;
     }
     
+    private void download() throws IOException{
+        try{
+            file= new File(FILE_PATH+stringInStream.readLine()); //Read in the name of the file
+            
+            file.createNewFile();
+            
+            if(fileOutStream!=null)
+                fileOutStream.close();
+            fileOutStream= new FileOutputStream(file);
+        
+            receiveFile();
+        }
+        catch(SocketTimeoutException ste){
+            System.out.println("Error, packet loss.");
+            
+            s.setSoTimeout(0); //Disables the timeout
+            
+            stringOutStream.println(ERROR_MSG); //Send the result back to the client
+            stringOutStream.flush();
+            
+            if(fileOutStream!=null)
+                fileOutStream.close();
+            file.delete();
+        }
+    }
+    
     private void sendFile() throws IOException, InterruptedException{
         System.out.println("Sending file...");
         int bytesRead= 0;
+        boolean failed= false;
         
         //Send the size of the file in bytes
         stringOutStream.println(file.length());
@@ -247,15 +261,21 @@ final class ServerThread extends Thread{
         
         Thread.sleep(StrmServer.SLEEP);
         
-        while((bytesRead= fileInStream.read(byteArray))!=-1)
+        while((bytesRead= fileInStream.read(byteArray))!=-1){
             outStream.write(byteArray,0,bytesRead);
+            
+            if(!stringInStream.readLine().equals(SUCCESS_MSG)){
+                failed= true;
+                break;
+            }
+        }
         
         outStream.flush();
         
-        if(stringInStream.readLine().equals(SUCCESS_MSG))
+        if(!failed)
             System.out.println("Success!");
         else
-            close= true;
+            System.out.println("FAILURE");
     }
     private void receiveFile() throws SocketTimeoutException, IOException{
         System.out.println("Receiving file...");
@@ -263,6 +283,7 @@ final class ServerThread extends Thread{
         long sizeOfFile= Long.parseLong(stringInStream.readLine());
         long totalBytesRead= 0;
         int bytesRead= 0;
+        int bufferBytesRead= 0;
         
         s.setSoTimeout(StrmServer.TIMEOUT); //Sets the timeout feature for the socket
         
@@ -270,12 +291,15 @@ final class ServerThread extends Thread{
             bytesRead= inStream.read(byteArray);
             fileOutStream.write(byteArray,0,bytesRead);
             totalBytesRead+= bytesRead;
+            
+            if(totalBytesRead%StrmServer.BUFFER_SIZE==0 || totalBytesRead==sizeOfFile){
+                //Send the success message
+                stringOutStream.println(SUCCESS_MSG);
+                stringOutStream.flush();
+            }
         }
         
         s.setSoTimeout(0); //Disables the timeout feature for the socket
-        
-        stringOutStream.println(SUCCESS_MSG);
-        stringOutStream.flush();
         
         System.out.println("File received!");
     }
