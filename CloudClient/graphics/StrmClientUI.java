@@ -6,6 +6,7 @@ import java.awt.FileDialog;
 import java.awt.Font;
 import java.awt.Toolkit;
 
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 public class StrmClientUI {
@@ -67,6 +68,7 @@ public class StrmClientUI {
     fileChooser.setMultipleMode(false); //To be changed at a later date?
 
     myWindow.setTitle(TITLE+" "+VERSION);
+    myWindow.getFrame().setIconImage(new ImageIcon("graphics/cloud-icon.png");
   }
 
   /**
