@@ -68,7 +68,7 @@ public class StrmClientUI {
     fileChooser.setMultipleMode(false); //To be changed at a later date?
 
     myWindow.setTitle(TITLE+" "+VERSION);
-    myWindow.getFrame().setIconImage(new ImageIcon("graphics/cloud-icon.png");
+    myWindow.getFrame().setIconImage(new ImageIcon("graphics/cloud-icon.png"));
   }
 
   /**
