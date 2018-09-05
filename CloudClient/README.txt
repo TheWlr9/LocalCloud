@@ -1,10 +1,9 @@
 Instructions:
+DO NOT MOVE FILES OUT OF THEIR FOLDERS
   Steps:
-    1. Must have StrmServer running on a machine (Host) with either a static IP address, or something that can pass as a static IP
-       address.
-    2. Then, you must edit the code in StrmClientBE.java where the value of ADDRESS is that of the Host (as a String).
-    3. Then, on any machine (Client) that can access the same WLAN that the Host is connected to, or the internet*, run StrmClientBE whenever you want to use 
-       the cloud.
+    1. Download StrmClient.zip on the computers that you want to be able to access your cloud
+    2. Unzip the .zip file somewhere
+    3. Double-click Strm.jar! (If you want to have a Desktop icon, create shortcut to Strm.jar and then move the shortcut onto your desktop.)
   Actions:
     - Clicking on the "Upload" button in the bottom right of the Client window, will upload any file you desire to the cloud, as long as 
       it is not restricted. This does not remove the file from the client, it only uploads a copy of the file to the cloud.
@@ -12,7 +11,9 @@ Instructions:
       downloaded).
     - Clicking on the "next" and "prev" buttons at the bottom will navigate through the pages of files you have stored on the cloud.
 
-StrmClient v.1.9.2 or later, compatible with StrmServer v1.4.7 or later.
+StrmClient beta-v.1.0.0 or later, compatible with StrmServer beta-v.1.0.0 or later.
+
+StrmClient v.1.9.2 to beta-v.1.0.0, compatible with StrmServer v1.4.7 to beta-v.1.0.0.
 
 CloudClient v.1.7.1 to v.1.8.2, compatible with CloudServer v1.2.5 to v.1.3.7.
 
