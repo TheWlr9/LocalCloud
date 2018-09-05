@@ -3,7 +3,16 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 1.9.2
+ * @version 2.0.0
+ * 
+ * _2.0.0_
+ * 		~~~BETA!!!~~~
+ * 		~Added password window
+ * 		~Added cloud IP address selector window
+ * 		~Added memory for cloud IP address
+ * 		~Jar files!
+ * 		~Added "back" option in password screen
+ * 		~Made it possible to enter IPv6 addresses
  * 
  * _1.9.2_
  * 		~Highly optimized file transfer! Reduced risk of losing data! A safer journey!
@@ -40,7 +49,6 @@ import graphics.StrmClientUI;
 
 public class StrmClientBE{
   final static private int PORT= 42843;
-  final static private String ADDRESS= "192.168.1.101";
   final static private int SLEEP= 250;
   
   final static private int TIMEOUT= 3000;
@@ -67,12 +75,17 @@ public class StrmClientBE{
   private static PrintWriter stringOutStream= null;
   private static BufferedReader stringInStream= null;
   
+  private static String address;
+  private static String password;
   private static byte[] byteArray;
   private static String[] cloudFilesNames;
+  private static String[] tenderInfo; //This is used to store the IP address and the password
   
   private static File file= null;
   private static FileInputStream fileSend= null;
   private static FileOutputStream fileReceive= null;
+  
+  private static File configFile= null;
   
   private static StrmClientUI graphics;
   
@@ -80,61 +93,21 @@ public class StrmClientBE{
   
   
   
-  //FLAGS
-  private static boolean setupError;
   
   public static void main(String[] args){
-	  setupError= false;
-	  escaping= false;
+    	  escaping= false;
 	  graphics= new StrmClientUI(MAX_FILES_PER_PAGE);
-    
-    try{
-      serverSocket= new Socket(ADDRESS, PORT);
-      
-      serverSocket.setPerformancePreferences(0, 0, 1); //Prioritizes bandwidth
-      serverSocket.setTrafficClass(0x18); //Prioritizes high throughput and low delay
-      
-      inStream= serverSocket.getInputStream();
-      stringInStream= new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-      
-      outStream= serverSocket.getOutputStream();
-      stringOutStream= new PrintWriter(new OutputStreamWriter(serverSocket.getOutputStream()));
-      
-      input= new BufferedReader(new InputStreamReader(System.in));
-    }
-    catch(IOException e){
-      System.err.println("ERROR: CloudClient.main: Error in setting up streams");
-      e.printStackTrace();
-      
-      graphics.popupError("Unable to access Raspberry Pi", "Error");
-      
-      setupError= true;
-    }
-    
-    try{
-    	pageNo= 1;
-    	
+	  tenderInfo= new String[2];
+	  
+	  openSettings();
+	  
+	  try{
+	    pageNo= 1;
+	    
       //HERE WAS THE NETWORKING STUFF
-      stringOutStream.println(serverSocket.getLocalAddress()); //Must send over the IP address first
-      stringOutStream.flush();
       
-      stringOutStream.println(BUF_SIZE_REQ);
-      stringOutStream.flush();
-      //Receive the buffer size
-      bufferSize= Integer.parseInt(stringInStream.readLine());
-      System.out.println("Buffer size: "+bufferSize);
       
-      byteArray= new byte[bufferSize];
-      
-      stringOutStream.println(NUM_FILES_REQ);
-      stringOutStream.flush();
-      int maxFilesUploaded= Integer.parseInt(stringInStream.readLine());
-      System.out.println("FILES: "+maxFilesUploaded);
-      cloudFilesNames= new String[maxFilesUploaded];
-      
-      updateCloudFilesNames();
-      
-      graphics.display(pageNo, numOfPages, cloudFilesNames); //Starting page #
+      startService();
       
       //Start the main activity "listener"
       while(graphics.exists()){
@@ -142,10 +115,50 @@ public class StrmClientBE{
         if(graphics.isMousePressed()){
           double mouseX= graphics.mouseX();
           double mouseY= graphics.mouseY();
-          boolean download= false;
-          boolean upload= false;
-          if(mouseX>(StrmClientUI.FILES_BOX_X-StrmClientUI.FILES_BOX_WIDTH/2) && mouseX<(StrmClientUI.FILES_BOX_X+StrmClientUI.FILES_BOX_WIDTH/2)){
-            for(int i= 0; i<MAX_FILES_PER_PAGE; i++){
+          if(mouseX>StrmClientUI.SETTINGS_BUTTON_X-StrmClientUI.SETTINGS_BUTTON_WIDTH/2 && mouseX<StrmClientUI.SETTINGS_BUTTON_X+StrmClientUI.SETTINGS_BUTTON_WIDTH/2
+		  && mouseY>StrmClientUI.SETTINGS_BUTTON_Y-StrmClientUI.SETTINGS_BUTTON_HEIGHT/2 && mouseY<StrmClientUI.SETTINGS_BUTTON_Y+StrmClientUI.SETTINGS_BUTTON_HEIGHT/2) {
+            stringOutStream.println(SHUTDOWN);
+            stringOutStream.flush();
+            
+            //Reset the configuration IP addresss file
+            PrintWriter writer= new PrintWriter(new FileWriter(configFile));
+            writer.write("0.0.0.0");
+            writer.flush();
+            writer.close();
+            
+            tenderInfo[0]= null;
+            tenderInfo[1]= null;
+            
+            openSettings();
+            
+            startService();
+          }
+          else if(mouseX>StrmClientUI.PAGE_L_X-StrmClientUI.PAGE_BUTTON_WIDTH/2 && mouseX<StrmClientUI.PAGE_R_X+StrmClientUI.PAGE_BUTTON_WIDTH/2
+		  && mouseY>StrmClientUI.PAGE_Y-StrmClientUI.PAGE_BUTTON_HEIGHT/2 && mouseY<StrmClientUI.PAGE_Y+StrmClientUI.PAGE_BUTTON_HEIGHT/2) {
+            Thread.sleep(200);
+            
+            if(mouseX<StrmClientUI.PAGE_L_X+StrmClientUI.PAGE_BUTTON_WIDTH/2) {
+              //The prev button has been hit
+              System.out.println("LEFT");
+              
+              if(pageNo>1) {
+        	pageNo--;
+        	
+        	graphics.display(pageNo, numOfPages, cloudFilesNames);
+              }
+            }
+            else if(mouseX>StrmClientUI.PAGE_R_X-StrmClientUI.PAGE_BUTTON_WIDTH/2){
+              //The next button has been hit
+              
+              if(pageNo<numOfPages) {
+        	pageNo++;
+        	
+        	graphics.display(pageNo, numOfPages, cloudFilesNames);
+              }
+            }
+          }
+          else if(mouseX>(StrmClientUI.FILES_BOX_X-StrmClientUI.FILES_BOX_WIDTH/2) && mouseX<(StrmClientUI.FILES_BOX_X+StrmClientUI.FILES_BOX_WIDTH/2)){
+            for(int i= 0; i<cloudFilesNames.length; i++){
               if(mouseY>(StrmClientUI.FILES_BOX_Y+i*StrmClientUI.TEXT_HEIGHT*StrmClientUI.FILES_BOX_SPACING_MULTIPLIER-StrmClientUI.TEXT_HEIGHT/2) && mouseY<(StrmClientUI.FILES_BOX_Y+i*StrmClientUI.TEXT_HEIGHT*StrmClientUI.FILES_BOX_SPACING_MULTIPLIER+StrmClientUI.TEXT_HEIGHT/2)){
                 System.out.println("File chosen: "+cloudFilesNames[i+(MAX_FILES_PER_PAGE*(pageNo-1))]);
                 
@@ -158,8 +171,6 @@ public class StrmClientBE{
                 
                 if(savingName!=null){
                   if(download(fileToSave, savingDirectory, savingName)) {
-                    
-                    download= true;
                     
                     //Ask to see whether the user wants to delete the file from the cloud now
                     if(graphics.popupDeleteFileConfirmation())
@@ -182,8 +193,8 @@ public class StrmClientBE{
               }
             }
           }
-          if(!download && mouseX>StrmClientUI.BUTTON_X-StrmClientUI.BUTTON_WIDTH/2 && mouseX<StrmClientUI.BUTTON_X+StrmClientUI.BUTTON_WIDTH/2 &&
-          mouseY>StrmClientUI.BUTTON_Y-StrmClientUI.BUTTON_HEIGHT/2 && mouseY<StrmClientUI.BUTTON_Y+StrmClientUI.BUTTON_HEIGHT/2){
+          else if(mouseX>StrmClientUI.UPLOAD_BUTTON_X-StrmClientUI.UPLOAD_BUTTON_WIDTH/2 && mouseX<StrmClientUI.UPLOAD_BUTTON_X+StrmClientUI.UPLOAD_BUTTON_WIDTH/2 &&
+          mouseY>StrmClientUI.UPLOAD_BUTTON_Y-StrmClientUI.UPLOAD_BUTTON_HEIGHT/2 && mouseY<StrmClientUI.UPLOAD_BUTTON_Y+StrmClientUI.UPLOAD_BUTTON_HEIGHT/2){
             Thread.sleep(200);
             
             graphics.uploadFilePopup();
@@ -194,8 +205,6 @@ public class StrmClientBE{
               upload(graphics.getUploadingDirectory(), graphics.getUploadingName());
               
               if(!escaping) {
-            	  upload= true;
-            	  
             	  Thread.sleep(SLEEP);
         	  
             	  //Get the new number of files
@@ -204,36 +213,16 @@ public class StrmClientBE{
             	  cloudFilesNames= new String[Integer.parseInt(stringInStream.readLine())];
             	  
             	  updateCloudFilesNames();
+            	  if(pageNo<=0)
+            	    pageNo= 1;
+            	  if(numOfPages<=0)
+            	    numOfPages= 1;
             	  graphics.display(pageNo, numOfPages, cloudFilesNames);
             	  
             	  graphics.clearMsg();
               }
             }
           }
-          if(!download && !upload && mouseX>StrmClientUI.PAGE_L_X-StrmClientUI.PAGE_BUTTON_WIDTH/2 && mouseX<StrmClientUI.PAGE_R_X+StrmClientUI.PAGE_BUTTON_WIDTH/2
-        		  && mouseY>StrmClientUI.PAGE_Y-StrmClientUI.PAGE_BUTTON_HEIGHT/2 && mouseY<StrmClientUI.PAGE_Y+StrmClientUI.PAGE_BUTTON_HEIGHT/2) {
-        	  Thread.sleep(200);
-        	  
-        	  if(mouseX<StrmClientUI.PAGE_L_X+StrmClientUI.PAGE_BUTTON_WIDTH/2) {
-        		  //The prev button has been hit
-        		  
-        		  if(pageNo>1) {
-        			  pageNo--;
-        			  
-        			  graphics.display(pageNo, numOfPages, cloudFilesNames);
-        		  }
-        	  }
-        	  else if(mouseX>StrmClientUI.PAGE_R_X-StrmClientUI.PAGE_BUTTON_WIDTH/2){
-        		  //The next button has been hit
-        		  
-        		  if(pageNo<numOfPages) {
-        			  pageNo++;
-        			  
-        			  graphics.display(pageNo, numOfPages, cloudFilesNames);
-        		  }
-        	  }
-          }
-          
           //Thread.sleep(200); //This is so it only executes the block once per mouse press. (Essentially is mouse clicked.)
         }
       }
@@ -242,76 +231,51 @@ public class StrmClientBE{
     	  stringOutStream.flush();
       }
     }
-    catch(Exception e){
-    	if(!setupError) {
-    		if(e instanceof SocketTimeoutException){ 
-    			//Send receipt 
-    			stringOutStream.println(ERROR_MSG);
-    			stringOutStream.flush(); 
-    			System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised"); 
-    			e.printStackTrace(); 
-
-    			graphics.popupError("Please try again!", "Error: Packet loss");	
-    		} 
-    		else if(e instanceof IOException) {
-	    		System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
-	    		e.printStackTrace();
-	    		
-	    		graphics.popupError("Packet loss. Please try again", "Error");
-	    	}
-	    	else if(e instanceof NullPointerException) {
-	    	      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
-	    	      e.printStackTrace();
-	    	      
-	    	      graphics.popupError("File does not exist", "Error");
-	    	}
-	    	else if(e instanceof InterruptedException) {
-	    	      System.err.println("ERROR: ClientSocket: main: Interrupt encountered, cannot sleep");
-	    	      
-	    	      graphics.popupError("Ruched service; failsafe triggered", "Error");
-	    	}
-	    	else if(e instanceof SecurityException) {
-	    	      System.err.println("ERROR: ClientSocket: main: Client attempting to access unauthorized files");
-	    	      
-	    	      graphics.popupError("You are unauthorized to access those files", "Error");
-	    	}
-	    	else {
-	    		e.printStackTrace();
-	    	}
-    	}
-    }
+	  catch(Exception e){
+	    if(e instanceof SocketTimeoutException){ 
+	      //Send receipt 
+	      stringOutStream.println(ERROR_MSG);
+	      stringOutStream.flush(); 
+	      System.err.println("ERROR: ClientSocket.main: Packet loss, socket timeout raised"); 
+	      e.printStackTrace(); 
+	      
+	      graphics.popupError("Please try again!", "Error: Packet loss");	
+	    } 
+	    else if(e instanceof IOException) {
+	      System.err.println("ERROR: ClientSocket.main: Error in writing to server or reading from file");
+	      e.printStackTrace();
+	      
+	      graphics.popupError("Packet loss. Please try again", "Error");
+	    }
+	    else if(e instanceof NullPointerException) {
+	      System.err.println("ERROR: ClientSocket: main: Accessing messed up locations");
+	      e.printStackTrace();
+	      
+	      graphics.popupError("File does not exist", "Error");
+	    }
+	    else if(e instanceof InterruptedException) {
+	      System.err.println("ERROR: ClientSocket: main: Interrupt encountered, cannot sleep");
+	      
+	      graphics.popupError("Ruched service; failsafe triggered", "Error");
+	    }
+	    else if(e instanceof SecurityException) {
+	      System.err.println("ERROR: ClientSocket: main: Client attempting to access unauthorized files");
+	      
+	      graphics.popupError("You are unauthorized to access those files", "Error");
+	    }
+	    else {
+	      e.printStackTrace();
+	    }
+	  }
     finally{
     	if(graphics.exists()) {
     		graphics.close();
     	}
     	
-      System.out.println("\nClosing connection...");
-      try{
-        if(inStream!=null)
-          inStream.close();
-        
-        if(outStream!=null){
-          outStream.close();
-          if(stringOutStream!=null)
-            stringOutStream.close();
-        }
-        
-        if(serverSocket!=null)
-          serverSocket.close();
-        
-        if(fileSend!=null)
-          fileSend.close();
-        
-        if(fileReceive!=null)
-          fileReceive.close();
-        
-        if(input!=null)
-          input.close();
-       System.out.println("Closed connection.");
-      }
-      catch(IOException e){
-        System.err.println("ERROR: ClientCloud.main: Error in terminating streams");
-      }
+    	if(stringOutStream!=null)
+    	  stringOutStream.close();
+    	
+    	disconnect();
     }
   }
   
@@ -325,6 +289,8 @@ public class StrmClientBE{
     stringOutStream.flush();
     
     sendFile(path, filename);
+    
+    fileSend.close();
   }
   /*
    * Receives a receipt at the end
@@ -375,8 +341,6 @@ public class StrmClientBE{
     	System.out.println("Success!");
     else {
       System.err.println("Error, packet loss.");
-      
-      fileSend.close();
       
       if(graphics.popupPacketLossRetry())
 	upload(path, fileName);
@@ -433,6 +397,9 @@ public class StrmClientBE{
     
     try {
       receiveFile(remoteFileName, localPath, localFileName);
+      
+      fileReceive.close(); //Close the file stream
+      
       return true; //Return successful
     }
     catch(SocketTimeoutException ste) {
@@ -501,3 +468,174 @@ public class StrmClientBE{
     numOfPages= (int)Math.ceil((double)cloudFilesNames.length/(double)MAX_FILES_PER_PAGE);
   }
   
+  private static void startService() throws NumberFormatException, IOException  {
+    stringOutStream.println(BUF_SIZE_REQ);
+    stringOutStream.flush();
+    
+    //Receive the buffer size
+    bufferSize= Integer.parseInt(stringInStream.readLine());
+    System.out.println("Buffer size: "+bufferSize);
+    
+    byteArray= new byte[bufferSize];
+    
+    stringOutStream.println(NUM_FILES_REQ);
+    stringOutStream.flush();
+    int maxFilesUploaded= Integer.parseInt(stringInStream.readLine());
+    System.out.println("FILES: "+maxFilesUploaded);
+    cloudFilesNames= new String[maxFilesUploaded];
+    
+    updateCloudFilesNames();
+    
+    graphics.display(pageNo, numOfPages, cloudFilesNames); //Starting page #
+  }
+  
+  private static void openSettings() {
+    disconnect();
+    
+    BufferedReader reader= null;
+    PrintWriter writer= null;
+    configFile= new File("settings.cfg");
+    try {
+      reader= new BufferedReader(new FileReader(configFile));
+    }
+    catch(FileNotFoundException e) {
+      //UNREACHABLE
+      e.printStackTrace();
+    }
+    
+    try {
+      String result= reader.readLine();
+      reader.close();
+      
+      if(!result.equals("0.0.0.0"))
+	tenderInfo[0]= result;
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    
+    if(tenderInfo[0]==null)
+      graphics.addressScreen(tenderInfo); //Set the IP address
+    if(!tenderInfo[0].isEmpty()) { //A check to see whether the window has closed
+      //No need to check if password is null, it will ALWAYS be null at this point
+      graphics.passwordScreen(tenderInfo); //Set the password
+      if(!tenderInfo[1].isEmpty()) { //A check to see whether the window has closed
+	try {
+	  address= tenderInfo[0];
+	  password= tenderInfo[1];
+	  
+	  connect();
+	  writer= new PrintWriter(new FileWriter(configFile));
+	  writer.write(tenderInfo[0]);
+	  writer.flush();
+	  
+	  writer.close();
+	}
+	catch(Exception e) {
+	  if(e instanceof IOException || e instanceof SocketException) {
+	    graphics.popupError("Unable to access Server", "Error");
+	    
+	    //Reset the IP address and the password
+	    tenderInfo[0]= null;
+	    tenderInfo[1]= null;
+	    
+	    try {
+	      writer= new PrintWriter(new FileWriter(configFile));
+	      writer.write("0.0.0.0");
+	      writer.flush();
+	      writer.close();
+	    } catch (IOException e1) {
+	      e1.printStackTrace();
+	    }
+	    
+	    
+	    openSettings();
+	  }
+	  else if(e instanceof PasswordException){
+	    graphics.popupError("Invalid password", "Strm");
+	    
+	    //Reset just the password
+	    tenderInfo[1]= null;
+	    
+	    openSettings();
+	  }
+	  else {
+	    e.printStackTrace();
+	  }
+	  //Otherwise... UNRECOGNIZED EXCEPTION!!
+	}
+      }
+      else { //The window has closed
+	System.exit(0);
+      }
+    }
+    else { //The window has closed
+      System.exit(0);
+    }
+  }
+  
+  private static void connect() throws IOException, PasswordException{
+    if(password.toLowerCase().equals("back"))
+      throw new IOException();
+    
+    //ADDRESS STUFF
+    serverSocket= new Socket();
+    serverSocket.connect(new InetSocketAddress(address, PORT), TIMEOUT+2000); //5 seconds
+    
+    serverSocket.setPerformancePreferences(0, 0, 1); //Prioritizes bandwidth
+    serverSocket.setTrafficClass(0x18); //Prioritizes high throughput and low delay
+    
+    inStream= serverSocket.getInputStream();
+    stringInStream= new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
+    
+    outStream= serverSocket.getOutputStream();
+    stringOutStream= new PrintWriter(new OutputStreamWriter(serverSocket.getOutputStream()));
+    
+    input= new BufferedReader(new InputStreamReader(System.in));
+    
+    stringOutStream.println(serverSocket.getLocalAddress()); //Must send over the IP address first
+    stringOutStream.flush();
+    
+    
+    //PASSWORD STUFF
+    stringOutStream.println(password);
+    stringOutStream.flush();
+    if(!stringInStream.readLine().equals(SUCCESS_MSG))
+      throw new PasswordException("Invalid password");
+  }
+  
+  private static void disconnect() {
+    try{
+      if(stringInStream!=null)
+	stringInStream.close();
+      if(inStream!=null)
+        inStream.close();
+      
+      if(stringOutStream!=null) {
+	stringOutStream.println(SHUTDOWN);
+	stringOutStream.flush();
+	stringOutStream.close();
+      }
+      if(outStream!=null)
+	outStream.close();
+      
+      if(serverSocket!=null) {
+	System.out.println("\nClosing connection...");
+        serverSocket.close();
+        System.out.println("Closed connection.");
+      }
+      
+      if(fileSend!=null)
+        fileSend.close();
+      
+      if(fileReceive!=null)
+        fileReceive.close();
+      
+      if(input!=null)
+        input.close();
+    }
+    catch(IOException e){
+      System.err.println("ERROR: ClientCloud.main: Error in terminating streams");
+    }
+  }
+  
+}
