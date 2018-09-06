@@ -13,7 +13,7 @@ DO NOT MOVE FILES OUT OF THEIR FOLDERS
 
 StrmClient beta-v.1.0.0 or later, compatible with StrmServer beta-v.1.0.0 or later.
 
-StrmClient v.1.9.2 to beta-v.1.0.0, compatible with StrmServer v1.4.7 to beta-v.1.0.0.
+StrmClient v.1.9.2 to beta-v.0.9.0, compatible with StrmServer v1.4.7 to beta-v.0.9.0.
 
 CloudClient v.1.7.1 to v.1.8.2, compatible with CloudServer v1.2.5 to v.1.3.7.
 
