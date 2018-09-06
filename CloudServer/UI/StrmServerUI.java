@@ -29,7 +29,7 @@ public class StrmServerUI
     
     final public static int WIDTH= 500;
     final public static int HEIGHT= 500;
-    final private static String TITLE= "Strm Server Control Panel beta-1.0.0";
+    final private static String TITLE= "Strm Server Control Panel beta-1.0.1";
     final private static String ICON_NAME= "graphics"+File.separator+"cloud-icon.png";
     
     final private static Font MAIN_MSG_FONT= new Font("Arial Black",Font.BOLD, WIDTH/25);
