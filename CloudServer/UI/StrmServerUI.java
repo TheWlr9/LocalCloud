@@ -3,13 +3,14 @@
  * This is the UI class for Strm Server
  * 
  * @author Will Ritchie
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import java.awt.Font;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.net.*;
 
@@ -209,6 +210,7 @@ public class StrmServerUI
     }
     
     public static String getIP(){
+        ArrayList<String> ips= new ArrayList<String>();
         try{
             Enumeration<NetworkInterface> netInt= NetworkInterface.getNetworkInterfaces();
             while(netInt.hasMoreElements()){
@@ -217,14 +219,26 @@ public class StrmServerUI
                     Enumeration<InetAddress> addresses= connection.getInetAddresses();
                     while(addresses.hasMoreElements()){
                         InetAddress address= addresses.nextElement();
-                        if(!address.getHostAddress().equals(address.getHostName()))
-                            return address.getHostAddress();
+                        System.out.println("Host address: "+address.getHostAddress()+", Host name: "+address.getHostName());
+                        ips.add(address.getHostAddress());
+                        //if(!address.getHostAddress().equals(address.getHostName()))
+                            //return address.getHostAddress();
                     }
                 }
             }
         }
         catch(SocketException e){
             e.printStackTrace();
+        }
+        
+        //Iterate through the array of IPs, and find one that is in IPv4 format
+        if(!ips.isEmpty()){
+            for(String ip : ips)
+                if(ip.length()<=15)
+                    return ip;
+            
+            //Otherwise return the first IPv6 address
+            return ips.get(0);
         }
         
         return null; //If there is a failure
