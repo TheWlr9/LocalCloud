@@ -71,6 +71,13 @@ public class StrmClientUI {
   final public static int PAGE_BUTTON_HEIGHT= 30;
   
   final public static int PASSWORD_BULLET_RADIUS= 10;
+  
+  
+  
+  
+  private static int page;
+  private static int numOfPages;
+  private static String[] cloudFilesNames;
 
 
   public StrmClientUI(int maxFilesPerPage) {
@@ -249,6 +256,11 @@ public class StrmClientUI {
    * @param cloudFilesNames The list of cloud file names
    */
   public void display(int page, int numOfPages, String[] cloudFilesNames){
+    this.page= page;
+    this.numOfPages= numOfPages;
+    this.cloudFilesNames= cloudFilesNames;
+    
+    
     clear();
 
     displayCloudFilesNames(page, cloudFilesNames);
@@ -376,12 +388,17 @@ public class StrmClientUI {
   }
   
   public void clearLoading() {
+    /*
     Color prevColor= myWindow.getPenColour();
     myWindow.setPenColour(myWindow.WHITE);
     
     myWindow.filledRectangle(LOADING_X, LOADING_Y, (LOADING_WIDTH)/2+LOADING_WIDTH/10, (LOADING_HEIGHT)/2+LOADING_HEIGHT/10);
     
     myWindow.setPenColour(prevColor);
+    */
+    
+    clear();
+    display(page, numOfPages, cloudFilesNames);
   }
   
 
