@@ -5,6 +5,11 @@
  * 
  * @version 2.0.0
  * 
+ * _2.1.1_
+ * 		~Fixed bug with improperly terminating the program during after typing and then 
+ * 			exiting the window on the password or address screen
+ * 		~Added some more graphics (background + cloud overlay)
+ * 
  * _2.0.0_
  * 		~~~BETA!!!~~~
  * 		~Added password window
