@@ -10,8 +10,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 public class StrmClientUI {
-  final static private String VERSION= "beta-1.0.0";
+  final static private String VERSION= "beta-1.1.1";
   final static private String MOTD= "https://www.github.com/TheWlr9/Strm";
+  final static public String CLOUD_ICON_PATH= "graphics/cloud-icon.png";
 
   final private static Dimension SCREEN_SIZE= Toolkit.getDefaultToolkit().getScreenSize();
   final private static double SCREEN_WIDTH= SCREEN_SIZE.getWidth();
@@ -25,6 +26,10 @@ public class StrmClientUI {
   final private static int MAX_PASSWORD_LENGTH= 50;
 
   private static FileDialog fileChooser;
+  
+  //All in RGB format
+  public static final Color COLOUR_1= new Color(175,175,175);
+  public static final Color COLOUR_2= new Color(100,100,100);
 
   final private static Font FILES_FONT= new Font("Arial Black",Font.PLAIN,width/64);
   final public static int LEFT_FILES= width/10;
@@ -76,7 +81,7 @@ public class StrmClientUI {
     fileChooser.setMultipleMode(false); //To be changed at a later date?
 
     myWindow.setTitle(TITLE+" "+VERSION);
-    ImageIcon i= new ImageIcon("graphics/cloud-icon.png");
+    ImageIcon i= new ImageIcon(CLOUD_ICON_PATH);
     myWindow.getFrame().setIconImage(i.getImage());
   }
 
@@ -130,9 +135,10 @@ public class StrmClientUI {
   /**
    * Displays the password screen and modifies the password index of tender
    * @param tender The String[] that holds the IP address and the inputted password
+   * Sets tender[1] to the inputted value, or an empty string if the user has closed the window.
    */
   public void passwordScreen(String[] tender) {
-    myWindow.clear();
+    clear();
     
     myWindow.setFont(MSG_FONT);
     myWindow.text(width/2, height/2-height/5, "Enter \"back\" or enter password:");
@@ -165,7 +171,7 @@ public class StrmClientUI {
       
       if(oldLength!=letter) {
 	//Then update the visuals
-        myWindow.clear();
+        clear();
         myWindow.text(width/2,  height/2-height/5, "Enter \"back\" or password:");
         
         for(int i= 0; i<letter; i++) 
@@ -175,17 +181,21 @@ public class StrmClientUI {
       }
     }
     
-    if(myWindow.exists())
+    if(myWindow.exists()) {
       myWindow.text(width/2, height-height/6, "Connecting...");
     
-    tender[1]= (String.valueOf(input)).trim();
+      tender[1]= (String.valueOf(input)).trim();
+    }
+    else
+      tender[1]= "";
   }
   /**
    * Displays the IP address setting screen, and modifies the IP address index of tender (1)
    * @param tender The String[] holding the IP address and the password
+   * Sets tender[0] to the inputted value, or and empty string if the window has been closed
    */
   public void addressScreen(String[] tender) {
-    myWindow.clear();
+    clear();
     
     myWindow.setFont(MSG_FONT);
     myWindow.text(width/2, height/2-height/5, "Enter cloud address:");
@@ -218,7 +228,7 @@ public class StrmClientUI {
       
       if(oldLength!=number) {
 	//Then update the visuals
-        myWindow.clear();
+        clear();
         myWindow.text(width/2,  height/2-height/5, "Enter cloud address:");
         
         myWindow.text(width/2, height/2, String.valueOf(input).trim());
@@ -226,7 +236,10 @@ public class StrmClientUI {
         oldLength= number;
       }
     }
-    tender[0]= (String.valueOf(input)).trim();
+    if(myWindow.exists())
+      tender[0]= (String.valueOf(input)).trim();
+    else
+      tender[0]= "";
   }
 
   /**
@@ -236,7 +249,7 @@ public class StrmClientUI {
    * @param cloudFilesNames The list of cloud file names
    */
   public void display(int page, int numOfPages, String[] cloudFilesNames){
-    myWindow.clear();
+    clear();
 
     displayCloudFilesNames(page, cloudFilesNames);
 
@@ -337,6 +350,20 @@ public class StrmClientUI {
     myWindow.setPenColour(WindowedGraphics.BLACK);
     myWindow.setFont(MSG_FONT);
     myWindow.textLeft(LEFT_FILES,MSG_Y,"Loading...");
+  }
+  
+  public void clear() {
+    Color prevColour= myWindow.getPenColour();
+    myWindow.clear();
+    
+    myWindow.setPenColour(COLOUR_1);
+    myWindow.filledRectangle(width/2, height/2, (width)/2, (height)/2);
+    
+    myWindow.setPenColour(COLOUR_2);
+    myWindow.picture(width/3, height/4, CLOUD_ICON_PATH);
+    
+    //Reset pen colour
+    myWindow.setPenColour(prevColour);
   }
   
   public void clearMsg(){
