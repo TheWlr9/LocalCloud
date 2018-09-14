@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 2.0.0
+ * @version 2.1.2
+ * 
+ * _2.1.2_
+ * 		~SEVERLY REDUCED CPU USAGE
  * 
  * _2.1.1_
  * 		~Fixed bug with improperly terminating the program during after typing and then 
@@ -104,7 +107,12 @@ public class StrmClientBE{
 	  graphics= new StrmClientUI(MAX_FILES_PER_PAGE);
 	  tenderInfo= new String[2];
 	  
-	  openSettings();
+	  try {
+	    openSettings();
+	  } catch (InterruptedException e1) {
+	    System.err.println("Got interrupted right at the beginning while setting up maybe?");
+	    e1.printStackTrace();
+	  }
 	  
 	  try{
 	    pageNo= 1;
@@ -116,6 +124,7 @@ public class StrmClientBE{
       
       //Start the main activity "listener"
       while(graphics.exists()){
+	Thread.sleep(StrmClientUI.PASSIVE_TIMEOUT); //Wait a bit so you give the CPU a bit of a rest
         
         if(graphics.isMousePressed()){
           double mouseX= graphics.mouseX();
@@ -494,7 +503,7 @@ public class StrmClientBE{
     graphics.display(pageNo, numOfPages, cloudFilesNames); //Starting page #
   }
   
-  private static void openSettings() {
+  private static void openSettings() throws InterruptedException {
     disconnect();
     
     BufferedReader reader= null;
