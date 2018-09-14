@@ -3,7 +3,7 @@
  * This is the UI class for Strm Server
  * 
  * @author Will Ritchie
- * @version 1.0.1
+ * @version 1.0.2
  */
 
 import javax.swing.ImageIcon;
@@ -27,9 +27,11 @@ public class StrmServerUI
     final private static String LOG_FILE= "etc"+File.separator+"log.cfg";
     private static String cloudPath= "docs"+File.separator;
     
+    final private static int PASSIVE_TIMEOUT= 50; //The timeout time for waiting for the next mousepress, keystroke, etc...
+    
     final public static int WIDTH= 500;
     final public static int HEIGHT= 500;
-    final private static String TITLE= "Strm Server Control Panel beta-1.0.1";
+    final private static String TITLE= "Strm Server Control Panel beta-1.0.2";
     final private static String ICON_NAME= "graphics"+File.separator+"cloud-icon.png";
     
     final private static Font MAIN_MSG_FONT= new Font("Arial Black",Font.BOLD, WIDTH/25);
@@ -90,6 +92,14 @@ public class StrmServerUI
         
         //Start the listener code:
         while(ui.exists()){
+            try{
+                Thread.sleep(PASSIVE_TIMEOUT);
+            }
+            catch(InterruptedException e){
+                System.err.println("Error in sleeping");
+                e.printStackTrace();
+            }
+            
             if(ui.isMousePressed()){
                 double mouseX= ui.mouseX();
                 double mouseY= ui.mouseY();
