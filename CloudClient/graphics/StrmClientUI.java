@@ -10,7 +10,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 public class StrmClientUI {
-  final static private String VERSION= "beta-1.1.1";
+  final static private String VERSION= "beta-1.1.2";
   final static private String MOTD= "https://www.github.com/TheWlr9/Strm";
   final static public String CLOUD_ICON_PATH= "graphics/cloud-icon.png";
 
@@ -26,6 +26,8 @@ public class StrmClientUI {
   final private static int MAX_PASSWORD_LENGTH= 50;
 
   private static FileDialog fileChooser;
+  
+  public static int PASSIVE_TIMEOUT= 50; //The timeout for waiting for the next mouse press or keystroke etc...
   
   //All in RGB format
   public static final Color COLOUR_1= new Color(175,175,175);
@@ -143,8 +145,9 @@ public class StrmClientUI {
    * Displays the password screen and modifies the password index of tender
    * @param tender The String[] that holds the IP address and the inputted password
    * Sets tender[1] to the inputted value, or an empty string if the user has closed the window.
+   * @throws InterruptedException 
    */
-  public void passwordScreen(String[] tender) {
+  public void passwordScreen(String[] tender) throws InterruptedException {
     clear();
     
     myWindow.setFont(MSG_FONT);
@@ -158,6 +161,8 @@ public class StrmClientUI {
     int oldLength= 0;
     
     while(!answer && myWindow.exists()) {
+      Thread.sleep(PASSIVE_TIMEOUT); //Calm down and wait a bit for before running the infiinite loop again
+      
       if(myWindow.hasNextKeyTyped()) {
 	char typed= myWindow.nextKeyTyped();
 	if(typed!='\n' && typed!=8) { //Check to see if the character typed is not ENTER or BACKSPACE
@@ -200,8 +205,9 @@ public class StrmClientUI {
    * Displays the IP address setting screen, and modifies the IP address index of tender (1)
    * @param tender The String[] holding the IP address and the password
    * Sets tender[0] to the inputted value, or and empty string if the window has been closed
+   * @throws InterruptedException 
    */
-  public void addressScreen(String[] tender) {
+  public void addressScreen(String[] tender) throws InterruptedException {
     clear();
     
     myWindow.setFont(MSG_FONT);
@@ -215,6 +221,8 @@ public class StrmClientUI {
     int oldLength= 0;
     
     while(!answer && myWindow.exists()) {
+      Thread.sleep(PASSIVE_TIMEOUT); //Wait a bit before executing
+      
       if(myWindow.hasNextKeyTyped()) {
 	char typed= myWindow.nextKeyTyped();
 	if(typed!='\n' && typed!=8) { //Check to see if the character typed is not ENTER or BACKSPACE
