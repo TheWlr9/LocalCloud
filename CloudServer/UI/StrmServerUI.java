@@ -3,7 +3,7 @@
  * This is the UI class for Strm Server
  * 
  * @author Will Ritchie
- * @version 1.0.2
+ * @version 1.2.2
  */
 
 import javax.swing.ImageIcon;
@@ -31,7 +31,7 @@ public class StrmServerUI
     
     final public static int WIDTH= 500;
     final public static int HEIGHT= 500;
-    final private static String TITLE= "Strm Server Control Panel beta-1.0.2";
+    final private static String TITLE= "Strm Server Control Panel beta-1.1.2";
     final private static String ICON_NAME= "graphics"+File.separator+"cloud-icon.png";
     
     final private static Font MAIN_MSG_FONT= new Font("Arial Black",Font.BOLD, WIDTH/25);
