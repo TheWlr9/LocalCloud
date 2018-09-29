@@ -3,7 +3,10 @@
  * @Title Will's cloud
  * @author William Leonardo Ritchie
  * 
- * @version 2.1.2
+ * @version 2.2.2
+ * 
+ * _2.2.2_
+ * 		~Added ENCRYPTION FINALLY
  * 
  * _2.1.2_
  * 		~SEVERLY REDUCED CPU USAGE
@@ -52,12 +55,23 @@
  */
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 import graphics.StrmClientUI;
 
 public class StrmClientBE{
   final static private int PORT= 42843;
   final static private int SLEEP= 250;
+  
+  final static private String KEY_SEED= "WhirlwindLuigigo";
+  //KEY_SEED.length()==16 || KEY_SEED.length()==24 || KEY_SEED.length()==32
+  //KEY_SEED must equal the same as KEY_SEED on server
+  final static private Key key= new SecretKeySpec(KEY_SEED.getBytes(), "AES") ;
   
   final static private int TIMEOUT= 3000;
   final static private int MAX_FILES_PER_PAGE= 10;
@@ -82,10 +96,14 @@ public class StrmClientBE{
   private static BufferedReader input= null;
   private static PrintWriter stringOutStream= null;
   private static BufferedReader stringInStream= null;
+  //Now cryptography
+  private static Cipher encryptCipher= null;
+  private static Cipher decryptCipher= null;
   
   private static String address;
   private static String password;
-  private static byte[] byteArray;
+  private static byte[] byteArraySend;
+  private static byte[] byteArrayReceive;
   private static String[] cloudFilesNames;
   private static String[] tenderInfo; //This is used to store the IP address and the password
   
@@ -108,10 +126,23 @@ public class StrmClientBE{
 	  tenderInfo= new String[2];
 	  
 	  try {
+	    encryptCipher= Cipher.getInstance("AES"); //Must be constant for security reasons
+	    decryptCipher= Cipher.getInstance("AES"); //Must be constant for security reasons
+	    encryptCipher.init(Cipher.ENCRYPT_MODE, key);
+	    decryptCipher.init(Cipher.DECRYPT_MODE, key);
+	    
 	    openSettings();
 	  } catch (InterruptedException e1) {
 	    System.err.println("Got interrupted right at the beginning while setting up maybe?");
 	    e1.printStackTrace();
+	  } catch (NoSuchAlgorithmException e) {
+	    System.err.println("Encryption algorithm DNE");
+	    e.printStackTrace();
+	  } catch (NoSuchPaddingException e) {
+	    e.printStackTrace();
+	  } catch (InvalidKeyException e) {
+	    System.err.println("Wrong type of key");
+	    e.printStackTrace();
 	  }
 	  
 	  try{
@@ -134,7 +165,7 @@ public class StrmClientBE{
             stringOutStream.println(SHUTDOWN);
             stringOutStream.flush();
             
-            //Reset the configuration IP addresss file
+            //Reset the configuration IP address file
             PrintWriter writer= new PrintWriter(new FileWriter(configFile));
             writer.write("0.0.0.0");
             writer.flush();
@@ -199,7 +230,6 @@ public class StrmClientBE{
                   	  pageNo--;
                     graphics.display(pageNo, numOfPages, cloudFilesNames);
                   }
-                  graphics.clearMsg();
                   graphics.clearLoading();
                 }
                 
@@ -233,7 +263,7 @@ public class StrmClientBE{
             	    numOfPages= 1;
             	  graphics.display(pageNo, numOfPages, cloudFilesNames);
             	  
-            	  graphics.clearMsg();
+            	  graphics.clearLoading();
               }
             }
           }
@@ -323,6 +353,7 @@ public class StrmClientBE{
 	long waitTime= maxPingRecorded/2;
     int bytesRead= 0;
     int totalBytesRead= 0;
+    byte[] cipherText = null;
     
     boolean failed= false;
     
@@ -337,8 +368,17 @@ public class StrmClientBE{
     Thread.sleep(SLEEP);
     
     //Write the byte stream to the server
-    while((bytesRead= fileSend.read(byteArray))!=-1) {
-      outStream.write(byteArray,0,bytesRead);
+    while((bytesRead= fileSend.read(byteArraySend))!=-1) {
+      try {
+	cipherText= encryptCipher.doFinal(byteArraySend,0,bytesRead);
+      } catch (Exception e) {
+	System.err.println("Error in encrypting the file");
+	e.printStackTrace();
+      }
+      
+      //Write the ciphertext to outStream (OutputStream)
+      outStream.write(cipherText);
+      //outStream.write(byteArray,0,bytesRead);
       
       if(!stringInStream.readLine().equals(SUCCESS_MSG)) {
 	failed= true;
@@ -384,10 +424,29 @@ public class StrmClientBE{
     long totalBytesRead= 0;
     //Write the byte stream to the file
     int bytesRead= 0;
+    int bufferBytesRead= 0;
+    byte[] plainText= null;
+    
     while(totalBytesRead<sizeOfFile){
-      bytesRead= inStream.read(byteArray);
-      fileReceive.write(byteArray,0,bytesRead);
-      totalBytesRead+= bytesRead;
+      //Used to be inStream.read(byteArray)
+      
+      bytesRead= 0;
+      
+      while(encryptCipher.getOutputSize((int)(sizeOfFile-totalBytesRead))!=bytesRead && (bufferBytesRead= inStream.read(byteArrayReceive,  bytesRead,  byteArrayReceive.length-bytesRead))>0)
+	bytesRead+= bufferBytesRead;
+      
+      try {
+	//Store the plaintext into plainText (byte[])
+	plainText= decryptCipher.doFinal(byteArrayReceive,0,bytesRead);
+      }
+      catch(Exception e) {
+	System.err.println("Error in decrypting");
+	e.printStackTrace();
+      }
+      
+      //Write the plaintext to the file
+      fileReceive.write(plainText);
+      totalBytesRead+= plainText.length;
       
       if(totalBytesRead%bufferSize==0 || totalBytesRead==sizeOfFile) {
 	//Send the success message
@@ -490,7 +549,8 @@ public class StrmClientBE{
     bufferSize= Integer.parseInt(stringInStream.readLine());
     System.out.println("Buffer size: "+bufferSize);
     
-    byteArray= new byte[bufferSize];
+    byteArraySend= new byte[bufferSize];
+    byteArrayReceive= new byte[bufferSize+16];
     
     stringOutStream.println(NUM_FILES_REQ);
     stringOutStream.flush();
