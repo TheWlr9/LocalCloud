@@ -1,10 +1,15 @@
 import java.net.*;
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.security.Key;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @author William Ritchie
- * @version 2.0.0/September 5 2018
+ * @version 2.1.0/September 29 2018
  */
 public class StrmServer
 {
@@ -14,6 +19,11 @@ public class StrmServer
     public final static int MAX_FILES_PER_PAGE= 10;
     public final static int SLEEP= 125;
     public final static int TIMEOUT= 3000;
+    
+    public final static String KEY_SEED= "WhirlwindLuigigo";
+    //KEY_SEED.length()==16 || KEY_SEED.length()==24 || KEY_SPEED.length()==32
+    //KEY_SEED must equal the same as KEY_SEED on client
+    final static Key KEY= new SecretKeySpec(KEY_SEED.getBytes(), "AES");
     
     private static String password= null;
     static String cloudPath= "docs"+File.separator;
@@ -44,9 +54,7 @@ public class StrmServer
                     writer.close();
                 }
                 catch(IOException ioe){
-                    System.err.println("Error in reseting PID");
-                    
-                    ioe.printStackTrace();
+                    System.err.println("Error in resetting PID");
                 }
             }
         });
@@ -68,9 +76,8 @@ public class StrmServer
             writer.close();
         }
         catch(IOException e){
-            System.err.println("Error: Cannot find log file to place PID");
-            
-            e.printStackTrace();
+            System.err.println("Warning: Cannot find log file to place PID");
+            System.err.println("Please make sure that you have control of when to stop the server");
         }
         
         if(args.length>1){
@@ -115,7 +122,13 @@ final class ServerThread extends Thread{
     InputStream inStream;
     BufferedReader stringInStream;
     PrintWriter stringOutStream;
-    byte[] byteArray= new byte[StrmServer.BUFFER_SIZE]; //BUFFER_SIZE should be the same size as the client's BUFFER_SIZE
+    
+    //Cryptography
+    private Cipher encryptCipher= null;
+    private Cipher decryptCipher= null;
+    
+    byte[] byteArrayReceive= new byte[StrmServer.BUFFER_SIZE+16]; //BUFFER_SIZE should be the same size as the client's BUFFER_SIZE, plus 16 due to block padding
+    byte[] byteArraySend= new byte[StrmServer.BUFFER_SIZE]; //BUFFER_SIZE should be the same as the client one
     boolean close;
     private File file= null;
     FileOutputStream fileOutStream= null;
@@ -148,11 +161,15 @@ final class ServerThread extends Thread{
         try{
             outStream= s.getOutputStream();
             stringOutStream= new PrintWriter(new OutputStreamWriter(s.getOutputStream()));
+            encryptCipher= Cipher.getInstance("AES");
+            encryptCipher.init(Cipher.ENCRYPT_MODE,StrmServer.KEY);
             
             inStream= s.getInputStream();
             stringInStream= new BufferedReader(new InputStreamReader(s.getInputStream()));
+            decryptCipher= Cipher.getInstance("AES");
+            decryptCipher.init(Cipher.DECRYPT_MODE,StrmServer.KEY);
         }
-        catch(IOException e){
+        catch(Exception e){
             System.err.println("ERROR: ServerThread.run: Failed to create streams");
         }
         try{
@@ -297,8 +314,11 @@ final class ServerThread extends Thread{
         finally{
             try{
                 System.out.println("\nClosing connection...");
-                if(outStream!=null)
+                if(outStream!=null){
                     outStream.close();
+                    if(stringOutStream!=null)
+                        stringOutStream.close();
+                }
                 if(inStream!=null){
                     inStream.close();
                     if(stringInStream!=null)
@@ -353,6 +373,7 @@ final class ServerThread extends Thread{
         System.out.println("Sending file...");
         int bytesRead= 0;
         boolean failed= false;
+        byte[] cipherText= null;
         
         //Send the size of the file in bytes
         stringOutStream.println(file.length());
@@ -360,8 +381,17 @@ final class ServerThread extends Thread{
         
         Thread.sleep(StrmServer.SLEEP);
         
-        while((bytesRead= fileInStream.read(byteArray))!=-1){
-            outStream.write(byteArray,0,bytesRead);
+        while((bytesRead= fileInStream.read(byteArraySend))!=-1){
+            try{
+                cipherText= encryptCipher.doFinal(byteArraySend,0,bytesRead);
+            }
+            catch(Exception e){
+                System.err.println("Error in encrypting file");
+                e.printStackTrace();
+            }
+            
+            //Now write the encrypted data to the client
+            outStream.write(cipherText);
             
             if(!stringInStream.readLine().equals(SUCCESS_MSG)){
                 failed= true;
@@ -383,15 +413,32 @@ final class ServerThread extends Thread{
         long totalBytesRead= 0;
         int bytesRead= 0;
         int bufferBytesRead= 0;
+        byte[] plainText= null;
         
         s.setSoTimeout(StrmServer.TIMEOUT); //Sets the timeout feature for the socket
         
         while(totalBytesRead<sizeOfFile){
-            bytesRead= inStream.read(byteArray);
-            fileOutStream.write(byteArray,0,bytesRead);
-            totalBytesRead+= bytesRead;
+            //Used to be inStream.read(byteArrayReceive)
+            bytesRead= 0;
             
-            if(totalBytesRead%StrmServer.BUFFER_SIZE==0 || totalBytesRead==sizeOfFile){
+            //Read into inStream (InputStream) the encrypted buffer
+            while(encryptCipher.getOutputSize((int)(sizeOfFile-totalBytesRead))!=bytesRead && (bufferBytesRead= inStream.read(byteArrayReceive,bytesRead,byteArrayReceive.length-bytesRead))>0)
+                bytesRead+= bufferBytesRead; //All of this is just to read in the correct amount of bytes
+            
+            try{
+                //Store the plaintext into plainText (byte[])
+                plainText= decryptCipher.doFinal(byteArrayReceive,0,bytesRead);
+            }
+            catch(Exception e){
+                System.err.println("Error in decrypting");
+                e.printStackTrace();
+            }
+            
+            //Write the plaintext to the file
+            fileOutStream.write(plainText);
+            totalBytesRead+= plainText.length;
+            
+            if(totalBytesRead%StrmServer.BUFFER_SIZE==0 || totalBytesRead>=sizeOfFile){
                 //Send the success message
                 stringOutStream.println(SUCCESS_MSG);
                 stringOutStream.flush();
