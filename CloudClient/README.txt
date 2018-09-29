@@ -11,7 +11,9 @@ DO NOT MOVE FILES OUT OF THEIR FOLDERS
       downloaded).
     - Clicking on the "next" and "prev" buttons at the bottom will navigate through the pages of files you have stored on the cloud.
 
-StrmClient beta-v.1.0.0 or later, compatible with StrmServer beta-v.1.0.0 or later.
+StrmClient beta-v.1.2.2 or later, compatible with StrmServer beta-v.1.1.2 or later.
+
+StrmClient beta-v.1.0.0 to beta-v.1.1.2, compatible with StrmServer beta-v.1.0.0 to beta-v.1.0.2.
 
 StrmClient v.1.9.2 to beta-v.0.9.0, compatible with StrmServer v1.4.7 to beta-v.0.9.0.
 
