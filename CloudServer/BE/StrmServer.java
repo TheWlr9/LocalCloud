@@ -20,7 +20,8 @@ public class StrmServer
     public final static int SLEEP= 125;
     public final static int TIMEOUT= 3000;
     
-    public final static String KEY_SEED= "WhirlwindLuigigo";
+    //Key is censored for security reasons. This is not the key in the jar and downloadable tar.gz files.
+    public final static String KEY_SEED= "0000000000000000";
     //KEY_SEED.length()==16 || KEY_SEED.length()==24 || KEY_SPEED.length()==32
     //KEY_SEED must equal the same as KEY_SEED on client
     final static Key KEY= new SecretKeySpec(KEY_SEED.getBytes(), "AES");
