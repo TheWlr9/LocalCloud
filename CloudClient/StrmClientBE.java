@@ -68,7 +68,8 @@ public class StrmClientBE{
   final static private int PORT= 42843;
   final static private int SLEEP= 250;
   
-  final static private String KEY_SEED= "WhirlwindLuigigo";
+  //Key is not actually this string of 0s in downloadable zip and jar. It is in here just for security reasons
+  final static private String KEY_SEED= "0000000000000000";
   //KEY_SEED.length()==16 || KEY_SEED.length()==24 || KEY_SEED.length()==32
   //KEY_SEED must equal the same as KEY_SEED on server
   final static private Key key= new SecretKeySpec(KEY_SEED.getBytes(), "AES") ;
