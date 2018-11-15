@@ -10,8 +10,10 @@ DO NOT MOVE FILES OUT OF THEIR FOLDERS
     - Clicking on a file in the Client window will download that file from the cloud into the Client (you get to choose where it gets 
       downloaded).
     - Clicking on the "next" and "prev" buttons at the bottom will navigate through the pages of files you have stored on the cloud.
+    
+StrmClient beta-v.1.3.5 or later, compatible with StrmServer beta-v.1.1.3 or later.
 
-StrmClient beta-v.1.2.2 or later, compatible with StrmServer beta-v.1.1.2 or later.
+StrmClient beta-v.1.2.2 to beta-v.1.2.4, compatible with StrmServer beta-v.1.1.2.
 
 StrmClient beta-v.1.0.0 to beta-v.1.1.2, compatible with StrmServer beta-v.1.0.0 to beta-v.1.0.2.
 
