@@ -1,45 +1,39 @@
 package graphics;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
-import java.awt.Toolkit;
 
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 public class StrmClientUI {
-  final static private String VERSION= "beta-1.1.2";
+  final static private String VERSION= "beta-1.3.5";
   final static private String MOTD= "https://www.github.com/TheWlr9/Strm";
   final static public String CLOUD_ICON_PATH= "graphics/cloud-icon.png";
 
-  final private static Dimension SCREEN_SIZE= Toolkit.getDefaultToolkit().getScreenSize();
-  final private static double SCREEN_WIDTH= SCREEN_SIZE.getWidth();
-  final private static double SCREEN_HEIGHT= SCREEN_SIZE.getHeight();
-
   private static WindowedGraphics myWindow;
   final private static String TITLE= "Strm";
-  private static int width= (int)(SCREEN_WIDTH/2);//1024;
-  private static int height= (int)(3*SCREEN_HEIGHT/4);//768;
+  private static int width= (int)(500);//1024; //SCREEN_WIDTH/2
+  private static int height= (int)(500);//768; //3*SCREEN_HEIGHT/4
   private int maxFilesPerPage;
   final private static int MAX_PASSWORD_LENGTH= 50;
 
   private static FileDialog fileChooser;
   
-  public static int PASSIVE_TIMEOUT= 50; //The timeout for waiting for the next mouse press or keystroke etc...
+  public static int PASSIVE_TIMEOUT= 10; //The timeout for waiting for the next mouse press or keystroke etc...
   
   //All in RGB format
   public static final Color COLOUR_1= new Color(175,175,175);
   public static final Color COLOUR_2= new Color(100,100,100);
 
-  final private static Font FILES_FONT= new Font("Arial Black",Font.PLAIN,width/64);
+  final private static Font FILES_FONT= new Font("Arial Black",Font.PLAIN,width/54); ///64
   final public static int LEFT_FILES= width/10;
-  final public static int TEXT_HEIGHT= height/38;
+  final public static int TEXT_HEIGHT= height/28; ///38
   final public static int FILES_BOX_X= width/3;
   final public static int FILES_BOX_Y= height/4;
   final public static int FILES_BOX_WIDTH= width/2;
-  final public static double FILES_BOX_SPACING_MULTIPLIER= 1.5;
+  final public static double FILES_BOX_SPACING_MULTIPLIER= 1.2; //1.5
 
   final private static Font MSG_FONT= new Font("Arial Black", Font.BOLD, width/20);
   final private static int MSG_X= FILES_BOX_X;
@@ -71,6 +65,11 @@ public class StrmClientUI {
   final public static int PAGE_Y= (int)(height*(9.5/10.0));//height-50;
   final public static int PAGE_BUTTON_WIDTH= 60;
   final public static int PAGE_BUTTON_HEIGHT= 30;
+  
+  final public static int REFRESH_BUTTON_X= width/2;
+  final public static int REFRESH_BUTTON_Y= 7*height/10;
+  final public static int REFRESH_BUTTON_WIDTH= (int)(1.2*width/5);
+  final public static int REFRESH_BUTTON_HEIGHT= height/10;
   
   final public static int PASSWORD_BULLET_RADIUS= 10;
   
@@ -270,6 +269,8 @@ public class StrmClientUI {
     
     
     clear();
+    
+    displayRefreshButton();
 
     displayCloudFilesNames(page, cloudFilesNames);
 
@@ -281,6 +282,18 @@ public class StrmClientUI {
     
     displayMOTD();
   }
+  
+  /**
+   * Draws the refresh button on screen
+   */
+  private void displayRefreshButton() {
+    myWindow.setPenColour(WindowedGraphics.BLACK);
+    
+    //Draw the button
+    myWindow.rectangle(REFRESH_BUTTON_X, REFRESH_BUTTON_Y, (REFRESH_BUTTON_WIDTH)/2, (REFRESH_BUTTON_HEIGHT)/2);
+    myWindow.setFont(BUTTON_FONT);
+    myWindow.text(REFRESH_BUTTON_X, REFRESH_BUTTON_Y, "Refresh");
+  }
 
   /**
    * 
@@ -291,11 +304,11 @@ public class StrmClientUI {
     myWindow.setFont(FILES_FONT);
     //Draw the files uploaded
     if(cloudFilesNames.length>0) {
-      for(int i= 0; i<cloudFilesNames.length-((page-1)*maxFilesPerPage) && i<maxFilesPerPage; i++){
+      for(int i= 0; i<cloudFilesNames.length; i++){
         myWindow.setPenColour(WindowedGraphics.BLUE);
         myWindow.filledRectangle(FILES_BOX_X,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,(FILES_BOX_WIDTH)/2,(TEXT_HEIGHT)/2);
         myWindow.setPenColour(WindowedGraphics.WHITE);
-        myWindow.textLeft(LEFT_FILES,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,cloudFilesNames[i+(maxFilesPerPage*(page-1))]);
+        myWindow.textLeft(LEFT_FILES,FILES_BOX_Y+i*TEXT_HEIGHT*FILES_BOX_SPACING_MULTIPLIER,cloudFilesNames[i]);
       }
     }
   }
@@ -386,15 +399,6 @@ public class StrmClientUI {
     myWindow.setPenColour(prevColour);
   }
   
-  public void clearMsg(){
-    Color prevColour= myWindow.getPenColour();
-    myWindow.setPenColour(WindowedGraphics.WHITE);
-    
-    myWindow.filledRectangle(MSG_X,MSG_Y,(MSG_WIDTH)/2,(MSG_HEIGHT)/2);
-    
-    myWindow.setPenColour(prevColour);
-  }
-  
   public void clearLoading() {
     /*
     Color prevColor= myWindow.getPenColour();
@@ -405,7 +409,7 @@ public class StrmClientUI {
     myWindow.setPenColour(prevColor);
     */
     
-    clear();
+    //clear();
     display(page, numOfPages, cloudFilesNames);
   }
   
